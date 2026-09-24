@@ -99,6 +99,33 @@ describe("App", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("bad.csv: Missing columns");
   });
 
+  it("remembers loaded files after a reload", async () => {
+    const { unmount } = render(<App />);
+    await userEvent.setup().click(screen.getAllByRole("button", { name: "Load sample" })[0] as HTMLElement);
+    unmount();
+    render(<App />);
+    expect(laneLabels()).toContain("party 1");
+  });
+
+  it("forgets files on clear", async () => {
+    const user = await loadSample();
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("warns when the browser cannot remember the files", async () => {
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => {
+      throw new DOMException("full", "QuotaExceededError");
+    };
+    try {
+      await loadSample();
+      expect(screen.getByText(/too large for this browser/)).toBeInTheDocument();
+    } finally {
+      Storage.prototype.setItem = setItem;
+    }
+  });
+
   it("clears loaded data", async () => {
     const user = await loadSample();
     await user.click(screen.getByRole("button", { name: "Clear" }));

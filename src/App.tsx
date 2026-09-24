@@ -16,6 +16,7 @@ import { type Filters, Toolbar } from "./ui/Toolbar";
 import { Tooltip } from "./ui/Tooltip";
 import type { Hover } from "./ui/types";
 import { useElementWidth } from "./ui/useElementWidth";
+import { usePersistentSources } from "./ui/usePersistentSources";
 
 const INITIAL_FILTERS: Filters = { entity: "", id: "", hops: 1, asOf: NOW, showGuides: true };
 
@@ -32,7 +33,7 @@ function load(sources: readonly SourceFile[]): Loaded {
 
 /** Load CSVs, then explore them on a shared valid-time axis. */
 export function App(): React.JSX.Element {
-  const [sources, setSources] = useState<readonly SourceFile[]>([]);
+  const { sources, setSources, remembered } = usePersistentSources();
   const [dragging, setDragging] = useState(false);
   const loaded = useMemo(() => load(sources), [sources]);
   const addFiles = async (files: Iterable<File>): Promise<void> => {
@@ -51,9 +52,14 @@ export function App(): React.JSX.Element {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
-      <TopBar onFiles={addFiles} onSample={() => setSources(SAMPLE_SOURCES)} onClear={() => setSources([])} hasData={sources.length > 0} />
+      <TopBar onFiles={addFiles} onSample={() => setSources(() => SAMPLE_SOURCES)} onClear={() => setSources(() => [])} hasData={sources.length > 0} />
+      {!remembered && (
+        <div className="notice" role="status">
+          These files are too large for this browser to remember — they will be gone after a reload.
+        </div>
+      )}
       {loaded.error !== null && <div className="error" role="alert">{loaded.error}</div>}
-      {loaded.dataset === null ? <EmptyState onSample={() => setSources(SAMPLE_SOURCES)} /> : <Explorer dataset={loaded.dataset} />}
+      {loaded.dataset === null ? <EmptyState onSample={() => setSources(() => SAMPLE_SOURCES)} /> : <Explorer dataset={loaded.dataset} />}
     </div>
   );
 }
@@ -83,7 +89,7 @@ function TopBar({ onFiles, onSample, onClear, hasData }: TopBarProps): React.JSX
         />
         <button type="button" className="btn primary" onClick={() => input.current?.click()}>Load CSVs</button>
         <button type="button" className="btn" onClick={onSample}>Load sample</button>
-        {hasData && <button type="button" className="btn" onClick={onClear}>Clear</button>}
+        {hasData && <button type="button" className="btn" title="Forget the loaded files in this browser" onClick={onClear}>Clear</button>}
       </div>
     </header>
   );
@@ -97,7 +103,7 @@ function EmptyState({ onSample }: { onSample: () => void }): React.JSX.Element {
         One file per table, named after the entity: <code>party.csv</code>, <code>group.csv</code>…
         Each needs <code>valid_from</code>, <code>valid_to</code>, <code>tech_valid_from</code> and{" "}
         <code>tech_valid_to</code>. Columns like <code>party_a_id</code> link rows to <code>party</code>.
-        Drop a file again to replace it.
+        Drop a file again to replace it. Files stay in this browser and are remembered across reloads.
       </p>
       <button type="button" className="btn primary" onClick={onSample}>Try the sample</button>
     </div>
