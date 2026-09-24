@@ -50,11 +50,12 @@ one, so you can re-run the join and reload just `joined.csv`.
 
 ## Sample data
 
-[`src/sample/`](src/sample/) follows one story. Parties are created before the group, the
-connection and the mapping, a few seconds apart in tech time. Party 1 is renamed with
-effect from 2024-06-01, recorded on 06-03. Party 3's typo is corrected retroactively.
-Connection 100 changes role on 05-01 and ends on 09-30. The mapping of connection 101 to
-group 10 arrives late. `joined.csv` is their bitemporal inner join, built by intersecting
+[`src/sample/`](src/sample/) follows one story. Rows are created in the order party,
+connection, group (if it does not exist yet), membership, a few seconds apart in tech time.
+They are deleted in reverse. Party 1 is renamed with effect from 2024-06-01, recorded on
+06-03. Party 3's typo is corrected retroactively. Connection 100 changes role on 05-01 and
+ends on 09-30: its membership is closed first, then the connection. The mapping of
+connection 101 to group 10 arrives late. `joined.csv` is their bitemporal inner join, built by intersecting
 rectangles.
 
 ## Development

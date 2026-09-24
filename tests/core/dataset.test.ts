@@ -93,7 +93,7 @@ describe("mergeSources", () => {
 
 describe("allVersions", () => {
   it("flattens every table", () => {
-    expect(allVersions(sample)).toHaveLength(31);
+    expect(allVersions(sample)).toHaveLength(33);
   });
 });
 

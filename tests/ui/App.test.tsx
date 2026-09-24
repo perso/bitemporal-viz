@@ -42,7 +42,7 @@ describe("App", () => {
   it("steps back through tech time", async () => {
     const user = await loadSample();
     await user.click(screen.getByRole("button", { name: "Previous change" }));
-    expect(screen.getByText("2024-10-02 16:00")).toBeInTheDocument();
+    expect(screen.getByText("2024-10-02 16:00:05")).toBeInTheDocument();
   });
 
   it("jumps along the tech slider", async () => {

@@ -13,7 +13,7 @@ describe("deriveView", () => {
   });
 
   it("shows every version for 'all'", () => {
-    expect(deriveView(dataset, { seed: null, hops: 1, asOf: "all" }).shown).toHaveLength(31);
+    expect(deriveView(dataset, { seed: null, hops: 1, asOf: "all" }).shown).toHaveLength(33);
   });
 
   it("rewinds to an earlier tech time", () => {
