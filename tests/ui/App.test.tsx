@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -124,6 +124,41 @@ describe("App", () => {
     } finally {
       Storage.prototype.setItem = setItem;
     }
+  });
+
+  it("remembers the view after a reload", async () => {
+    const user = await loadSample();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Entity" }), "connection");
+    await user.type(screen.getByRole("combobox", { name: "Id" }), "101");
+    await user.click(screen.getByRole("button", { name: "All versions" }));
+    cleanup();
+    render(<App />);
+    expect(screen.getByRole("combobox", { name: "Id" })).toHaveValue("101");
+  });
+
+  it("remembers the tech time mode after a reload", async () => {
+    const user = await loadSample();
+    await user.click(screen.getByRole("button", { name: "All versions" }));
+    cleanup();
+    render(<App />);
+    expect(screen.getByRole("button", { name: "All versions" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("resets the view but keeps the files", async () => {
+    const user = await loadSample();
+    await user.type(screen.getByRole("combobox", { name: "Id" }), "101");
+    await user.click(screen.getByRole("button", { name: "Reset view" }));
+    expect([screen.getByRole("combobox", { name: "Id" }), laneLabels().length > 1]).toEqual([
+      expect.objectContaining({ value: "" }),
+      true,
+    ]);
+  });
+
+  it("forgets the view on reset", async () => {
+    const user = await loadSample();
+    await user.type(screen.getByRole("combobox", { name: "Id" }), "101");
+    await user.click(screen.getByRole("button", { name: "Reset view" }));
+    expect(localStorage.getItem("bitemporal-viz:view:v1")).toBeNull();
   });
 
   it("clears loaded data", async () => {

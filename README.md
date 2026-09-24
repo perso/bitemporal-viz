@@ -30,9 +30,11 @@ A table without one, like `group_connection.csv` or your join output, gets one l
 combination of its ids. If you drop a file with the same name again, it replaces the old
 one, so you can re-run the join and reload just `joined.csv`.
 
-Files never leave the browser. They are read locally and kept in `localStorage`, so they
-survive a reload until you press **Clear**. If they are too large for the browser's quota
-(usually around 5 MB), a notice says so and the files last only until the tab closes.
+Files never leave the browser. They are read locally and kept in `localStorage` together
+with the view: focus, hops, tech time, guides, zoom, cursor and selected lane. Both survive
+a reload. **Reset view** restores the defaults and keeps the files. **Clear** forgets
+everything. If the files are too large for the browser's quota (usually around 5 MB), a
+notice says so and they last only until the tab closes.
 
 ## Reading the screen
 

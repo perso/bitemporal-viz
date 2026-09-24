@@ -2,23 +2,25 @@ import { type DragEvent, useMemo, useRef, useState } from "react";
 
 import { validChangePoints } from "./core/bitemporal";
 import { buildDataset, type Dataset, entityRef, mergeSources, type SourceFile } from "./core/dataset";
-import { type Domain, tidyInstant, validDomain } from "./core/domain";
+import { tidyInstant, validDomain } from "./core/domain";
 import { entityIds, entityNames } from "./core/filter";
 import { type Instant, NOW } from "./core/time";
 import { deriveView } from "./core/view";
+import { DEFAULT_VIEW_STATE, type Filters, parseViewState, type ViewState } from "./core/viewState";
 import { readCsvFiles } from "./io/files";
+import { parseSources, SOURCES_KEY, VIEW_KEY } from "./io/storage";
 import { SAMPLE_SOURCES } from "./sample";
 import { BitemporalPlane } from "./ui/BitemporalPlane";
 import { SnapshotPanel } from "./ui/SnapshotPanel";
 import { seriesColor } from "./ui/text";
 import { GUTTER, RIGHT, Timeline } from "./ui/Timeline";
-import { type Filters, Toolbar } from "./ui/Toolbar";
+import { Toolbar } from "./ui/Toolbar";
 import { Tooltip } from "./ui/Tooltip";
 import type { Hover } from "./ui/types";
 import { useElementWidth } from "./ui/useElementWidth";
-import { usePersistentSources } from "./ui/usePersistentSources";
+import { usePersistentState } from "./ui/usePersistentState";
 
-const INITIAL_FILTERS: Filters = { entity: "", id: "", hops: 1, asOf: NOW, showGuides: true };
+const NO_SOURCES: readonly SourceFile[] = [];
 
 type Loaded = { dataset: Dataset; error: null } | { dataset: null; error: string | null };
 
@@ -33,7 +35,9 @@ function load(sources: readonly SourceFile[]): Loaded {
 
 /** Load CSVs, then explore them on a shared valid-time axis. */
 export function App(): React.JSX.Element {
-  const { sources, setSources, remembered } = usePersistentSources();
+  const files = usePersistentState(SOURCES_KEY, parseSources, NO_SOURCES);
+  const view = usePersistentState(VIEW_KEY, parseViewState, DEFAULT_VIEW_STATE);
+  const { value: sources, set: setSources } = files;
   const [dragging, setDragging] = useState(false);
   const loaded = useMemo(() => load(sources), [sources]);
   const addFiles = async (files: Iterable<File>): Promise<void> => {
@@ -52,14 +56,14 @@ export function App(): React.JSX.Element {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
-      <TopBar onFiles={addFiles} onSample={() => setSources(() => SAMPLE_SOURCES)} onClear={() => setSources(() => [])} hasData={sources.length > 0} />
-      {!remembered && (
+      <TopBar onFiles={addFiles} onSample={() => setSources(() => SAMPLE_SOURCES)} onClear={() => { files.reset(); view.reset(); }} hasData={sources.length > 0} />
+      {!files.remembered && (
         <div className="notice" role="status">
           These files are too large for this browser to remember — they will be gone after a reload.
         </div>
       )}
       {loaded.error !== null && <div className="error" role="alert">{loaded.error}</div>}
-      {loaded.dataset === null ? <EmptyState onSample={() => setSources(() => SAMPLE_SOURCES)} /> : <Explorer dataset={loaded.dataset} />}
+      {loaded.dataset === null ? <EmptyState onSample={() => setSources(() => SAMPLE_SOURCES)} /> : <Explorer dataset={loaded.dataset} state={view.value} onStateChange={view.set} onReset={view.reset} />}
     </div>
   );
 }
@@ -110,11 +114,17 @@ function EmptyState({ onSample }: { onSample: () => void }): React.JSX.Element {
   );
 }
 
-function Explorer({ dataset }: { dataset: Dataset }): React.JSX.Element {
-  const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
-  const [zoom, setZoom] = useState<Domain | null>(null);
-  const [cursor, setCursor] = useState<Instant | null>(null);
-  const [selectedLane, setSelectedLane] = useState<string | null>(null);
+type ExplorerProps = {
+  readonly dataset: Dataset;
+  readonly state: ViewState;
+  readonly onStateChange: (update: (current: ViewState) => ViewState) => void;
+  readonly onReset: () => void;
+};
+
+function Explorer({ dataset, state, onStateChange, onReset }: ExplorerProps): React.JSX.Element {
+  const { filters, zoom, cursor, selectedLane } = state;
+  const patch = (change: Partial<ViewState>): void => onStateChange((current) => ({ ...current, ...change }));
+  const setZoom = (next: ViewState["zoom"]): void => patch({ zoom: next });
   const [hover, setHover] = useState<Hover | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const width = useElementWidth(chartRef);
@@ -131,18 +141,20 @@ function Explorer({ dataset }: { dataset: Dataset }): React.JSX.Element {
   const planeLane = view.lanes.find((l) => l.id === selectedLane) ?? view.lanes.at(-1);
   const planeVersions = view.related.filter((v) => `${v.table}/${v.lane}` === planeLane?.id);
   const onFilters = (next: Filters): void => {
-    if (next.entity !== filters.entity || next.id !== filters.id) setZoom(null);
-    setFilters({ ...next, entity: next.entity === "" ? entity : next.entity });
+    const refocused = next.entity !== filters.entity || next.id !== filters.id;
+    patch({ filters: { ...next, entity: next.entity === "" ? entity : next.entity }, ...(refocused && { zoom: null }) });
   };
   const pick = (instant: Instant, laneId: string | null = null): void => {
     const millisPerPixel = domain === null ? 0 : (domain[1] - domain[0]) / (width - GUTTER - RIGHT);
-    setCursor(tidyInstant(instant, validChangePoints(view.related), millisPerPixel));
-    if (laneId !== null) setSelectedLane(laneId);
+    patch({
+      cursor: tidyInstant(instant, validChangePoints(view.related), millisPerPixel),
+      ...(laneId !== null && { selectedLane: laneId }),
+    });
   };
 
   return (
     <>
-      <Toolbar filters={{ ...filters, entity }} entities={entities} ids={ids} techPoints={view.techPoints} onChange={onFilters} onResetZoom={() => setZoom(null)} />
+      <Toolbar filters={{ ...filters, entity }} entities={entities} ids={ids} techPoints={view.techPoints} onChange={onFilters} onResetZoom={() => setZoom(null)} onResetView={onReset} />
       <Legend dataset={dataset} related={view.related} conflicts={view.conflicts} />
       <div className="workspace">
         <div>

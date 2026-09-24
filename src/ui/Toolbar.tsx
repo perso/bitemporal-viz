@@ -1,13 +1,6 @@
 import { formatInstant, type Instant, NOW } from "../core/time";
 import type { AsOf } from "../core/view";
-
-export type Filters = {
-  readonly entity: string;
-  readonly id: string;
-  readonly hops: number;
-  readonly asOf: AsOf;
-  readonly showGuides: boolean;
-};
+import type { Filters } from "../core/viewState";
 
 type ToolbarProps = {
   readonly filters: Filters;
@@ -16,12 +9,14 @@ type ToolbarProps = {
   readonly techPoints: readonly Instant[];
   readonly onChange: (filters: Filters) => void;
   readonly onResetZoom: () => void;
+  readonly onResetView: () => void;
 };
 
 const HOPS = [0, 1, 2, 3];
 
 /** Filter controls, in one row above the charts. */
-export function Toolbar({ filters, entities, ids, techPoints, onChange, onResetZoom }: ToolbarProps): React.JSX.Element {
+export function Toolbar(props: ToolbarProps): React.JSX.Element {
+  const { filters, entities, ids, techPoints, onChange, onResetZoom, onResetView } = props;
   const set = (patch: Partial<Filters>): void => onChange({ ...filters, ...patch });
   return (
     <div className="card toolbar">
@@ -46,6 +41,9 @@ export function Toolbar({ filters, entities, ids, techPoints, onChange, onResetZ
       </label>
       <button type="button" className="btn reset" title="Ctrl + scroll zooms, drag pans" onClick={onResetZoom}>
         Reset zoom
+      </button>
+      <button type="button" className="btn" title="Back to the default focus, tech time, zoom and cursor" onClick={onResetView}>
+        Reset view
       </button>
     </div>
   );

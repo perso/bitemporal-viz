@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { loadSources, parseSources, saveSources, STORAGE_KEY } from "../../src/io/storage";
+import { loadItem, parseSources, saveItem } from "../../src/io/storage";
 
+const KEY = "test-key";
 const party = { name: "party.csv", text: "party_id\n1" };
+const asIs = (raw: unknown) => raw;
 
 function refusingStorage(name: string): Storage {
   const refuse = () => {
@@ -11,51 +13,60 @@ function refusingStorage(name: string): Storage {
   return { ...localStorage, getItem: refuse, setItem: refuse, removeItem: refuse };
 }
 
-describe("saveSources and loadSources", () => {
-  it("round-trips sources", () => {
-    saveSources([party], localStorage);
-    expect(loadSources(localStorage)).toEqual([party]);
+describe("saveItem and loadItem", () => {
+  it("round-trips JSON", () => {
+    saveItem(KEY, [party], localStorage);
+    expect(loadItem(KEY, asIs, null, localStorage)).toEqual([party]);
   });
 
-  it("removes the entry when nothing is loaded", () => {
-    saveSources([party], localStorage);
-    saveSources([], localStorage);
-    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+  it("runs the stored value through parse", () => {
+    saveItem(KEY, [party, 42], localStorage);
+    expect(loadItem(KEY, parseSources, [], localStorage)).toEqual([party]);
+  });
+
+  it("removes the entry for undefined", () => {
+    saveItem(KEY, [party], localStorage);
+    saveItem(KEY, undefined, localStorage);
+    expect(localStorage.getItem(KEY)).toBeNull();
+  });
+
+  it("falls back when nothing is stored", () => {
+    expect(loadItem(KEY, asIs, "fallback", localStorage)).toBe("fallback");
   });
 
   it("reports a full storage", () => {
-    expect(saveSources([party], refusingStorage("QuotaExceededError"))).toBe(false);
+    expect(saveItem(KEY, [party], refusingStorage("QuotaExceededError"))).toBe(false);
   });
 
   it("reports missing storage", () => {
-    expect(saveSources([party], null)).toBe(false);
+    expect(saveItem(KEY, [party], null)).toBe(false);
   });
 
-  it("loads nothing from blocked storage", () => {
-    expect(loadSources(refusingStorage("SecurityError"))).toEqual([]);
+  it("falls back on blocked storage", () => {
+    expect(loadItem(KEY, asIs, "fallback", refusingStorage("SecurityError"))).toBe("fallback");
   });
 
-  it("loads nothing from missing storage", () => {
-    expect(loadSources(null)).toEqual([]);
+  it("falls back on missing storage", () => {
+    expect(loadItem(KEY, asIs, "fallback", null)).toBe("fallback");
   });
 
-  it("loads nothing from corrupt JSON", () => {
-    localStorage.setItem(STORAGE_KEY, "{not json");
-    expect(loadSources(localStorage)).toEqual([]);
+  it("falls back on corrupt JSON", () => {
+    localStorage.setItem(KEY, "{not json");
+    expect(loadItem(KEY, asIs, "fallback", localStorage)).toBe("fallback");
   });
 
   it("uses the browser's localStorage by default", () => {
-    saveSources([party]);
-    expect(loadSources()).toEqual([party]);
+    saveItem(KEY, [party]);
+    expect(loadItem(KEY, asIs, null)).toEqual([party]);
   });
 });
 
 describe("parseSources", () => {
   it("drops malformed entries", () => {
-    expect(parseSources(JSON.stringify([party, 42, { name: "x" }]))).toEqual([party]);
+    expect(parseSources([party, 42, { name: "x" }])).toEqual([party]);
   });
 
   it("ignores a non-array", () => {
-    expect(parseSources('{"name":"x"}')).toEqual([]);
+    expect(parseSources({ name: "x" })).toEqual([]);
   });
 });

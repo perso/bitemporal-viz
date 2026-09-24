@@ -1,6 +1,7 @@
 import type { SourceFile } from "../core/dataset";
 
-export const STORAGE_KEY = "bitemporal-viz:sources:v1";
+export const SOURCES_KEY = "bitemporal-viz:sources:v1";
+export const VIEW_KEY = "bitemporal-viz:view:v1";
 
 /** The browser's localStorage, or `null` where it is blocked (e.g. some private modes). */
 export function browserStorage(): Storage | null {
@@ -12,27 +13,33 @@ export function browserStorage(): Storage | null {
   }
 }
 
-/** Sources saved by an earlier visit; none when missing, unreadable or blocked. */
-export function loadSources(storage: Storage | null = browserStorage()): SourceFile[] {
-  if (storage === null) return [];
+/** A stored JSON value run through `parse`; `fallback` when missing, unreadable or blocked. */
+export function loadItem<T>(
+  key: string,
+  parse: (raw: unknown) => T,
+  fallback: T,
+  storage: Storage | null = browserStorage(),
+): T {
+  if (storage === null) return fallback;
   try {
-    const raw = storage.getItem(STORAGE_KEY);
-    return raw === null ? [] : parseSources(raw);
+    const raw = storage.getItem(key);
+    return raw === null ? fallback : parse(JSON.parse(raw));
   } catch (error) {
-    if (error instanceof DOMException || error instanceof SyntaxError) return [];
+    if (error instanceof DOMException || error instanceof SyntaxError) return fallback;
     throw error;
   }
 }
 
-/** Remember sources for the next visit; `false` when the browser refuses (full or blocked). */
-export function saveSources(
-  sources: readonly SourceFile[],
+/** Store a value as JSON; `undefined` removes it. `false` when the browser refuses. */
+export function saveItem(
+  key: string,
+  value: unknown,
   storage: Storage | null = browserStorage(),
 ): boolean {
   if (storage === null) return false;
   try {
-    if (sources.length === 0) storage.removeItem(STORAGE_KEY);
-    else storage.setItem(STORAGE_KEY, JSON.stringify(sources));
+    if (value === undefined) storage.removeItem(key);
+    else storage.setItem(key, JSON.stringify(value));
     return true;
   } catch (error) {
     if (error instanceof DOMException) return false;
@@ -41,13 +48,12 @@ export function saveSources(
 }
 
 /**
- * Read stored JSON back into sources, dropping anything malformed.
+ * Keep only well-formed sources from stored JSON.
  *
- * @example parseSources('[{"name":"party.csv","text":"..."}, 42]') // [{ name: "party.csv", ... }]
+ * @example parseSources([{ name: "party.csv", text: "..." }, 42]) // [{ name: "party.csv", ... }]
  */
-export function parseSources(raw: string): SourceFile[] {
-  const parsed: unknown = JSON.parse(raw);
-  return Array.isArray(parsed) ? parsed.filter(isSource) : [];
+export function parseSources(raw: unknown): SourceFile[] {
+  return Array.isArray(raw) ? raw.filter(isSource) : [];
 }
 
 const isSource = (item: unknown): item is SourceFile =>
