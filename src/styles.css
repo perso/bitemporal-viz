@@ -101,6 +101,16 @@ button, input, select { font: inherit; color: inherit; }
 }
 .chip .count { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .chip.warn { color: var(--critical); border-color: color-mix(in oklab, var(--critical) 40%, transparent); }
+button.chip { cursor: pointer; font: inherit; color: inherit; }
+button.chip:hover { background: var(--hover); }
+.mapper { padding: 14px 16px; margin-bottom: 12px; }
+.mapper h2 { font-size: 15px; margin: 0 0 2px; }
+.mapper .meta { color: var(--ink-muted); font-size: 12px; margin: 0 0 10px; }
+.mapper .error { margin: 0 0 10px; }
+.mapper-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 16px; margin-bottom: 12px; }
+.mapper .field { flex-direction: column; align-items: stretch; gap: 4px; }
+.mapper select { border: 1px solid var(--ring); background: var(--surface-raised); border-radius: 7px; padding: 5px 8px; }
+.mapper-actions { display: flex; gap: 8px; }
 .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--c); flex: none; }
 
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; align-items: start; }

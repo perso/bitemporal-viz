@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  detectTimeColumns,
+  completeTimeColumns,
+  guessTimeColumns,
   inferReferences,
+  parseTimeColumnSettings,
   referencedEntity,
+  resolveTimeColumns,
   tableNameFromFile,
 } from "../../src/core/schema";
 
@@ -19,10 +22,12 @@ describe("tableNameFromFile", () => {
   });
 });
 
-describe("detectTimeColumns", () => {
+const COLUMNS = { validFrom: "vf", validTo: "vt", techFrom: "tf", techTo: "tt" };
+
+describe("guessTimeColumns", () => {
   it("finds the default names case-insensitively", () => {
     const header = ["id", "VALID_FROM", "valid_to", "tech_valid_from", "tech_valid_to"];
-    expect(detectTimeColumns(header)).toEqual({
+    expect(guessTimeColumns(header)).toEqual({
       validFrom: "VALID_FROM",
       validTo: "valid_to",
       techFrom: "tech_valid_from",
@@ -31,13 +36,57 @@ describe("detectTimeColumns", () => {
   });
 
   it("accepts alternative names from columns.json", () => {
-    expect(detectTimeColumns(["valid_start", "valid_end", "tx_from", "tx_to"]).techFrom).toBe("tx_from");
+    expect(guessTimeColumns(["valid_start", "valid_end", "tx_from", "tx_to"]).techFrom).toBe("tx_from");
   });
 
-  it("names every missing column", () => {
-    expect(() => detectTimeColumns(["valid_from", "valid_to"])).toThrow(
-      "Missing columns: tech_valid_from, tech_valid_to",
-    );
+  it("leaves out roles without a match", () => {
+    expect(guessTimeColumns(["valid_from", "created_at"])).toEqual({ validFrom: "valid_from" });
+  });
+});
+
+describe("resolveTimeColumns", () => {
+  it("prefers a stored choice that fits the header", () => {
+    expect(resolveTimeColumns(["vf", "vt", "tf", "tt"], COLUMNS)).toEqual(COLUMNS);
+  });
+
+  it("guesses when the stored columns are gone", () => {
+    expect(resolveTimeColumns(["valid_from"], COLUMNS)).toEqual({ validFrom: "valid_from" });
+  });
+
+  it("guesses without a stored choice", () => {
+    expect(resolveTimeColumns(["tx_to"], undefined)).toEqual({ techTo: "tx_to" });
+  });
+});
+
+describe("completeTimeColumns", () => {
+  it("accepts four distinct columns", () => {
+    expect(completeTimeColumns(COLUMNS)).toEqual(COLUMNS);
+  });
+
+  it("rejects a missing role", () => {
+    expect(completeTimeColumns({ ...COLUMNS, techTo: undefined })).toBeNull();
+  });
+
+  it("rejects an empty choice", () => {
+    expect(completeTimeColumns({ ...COLUMNS, techTo: "" })).toBeNull();
+  });
+
+  it("rejects one column used twice", () => {
+    expect(completeTimeColumns({ ...COLUMNS, techTo: "vf" })).toBeNull();
+  });
+});
+
+describe("parseTimeColumnSettings", () => {
+  it("keeps complete entries", () => {
+    expect(parseTimeColumnSettings({ party: COLUMNS })).toEqual({ party: COLUMNS });
+  });
+
+  it("drops malformed entries", () => {
+    expect(parseTimeColumnSettings({ party: COLUMNS, group: { validFrom: "vf" }, x: 1 })).toEqual({ party: COLUMNS });
+  });
+
+  it.each([null, [], "x"])("ignores %j", (raw) => {
+    expect(parseTimeColumnSettings(raw)).toEqual({});
   });
 });
 

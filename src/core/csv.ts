@@ -1,3 +1,5 @@
+import { DataError } from "./errors";
+
 export type CsvRecord = Readonly<Record<string, string>>;
 
 export type Csv = {
@@ -41,7 +43,7 @@ export function parseRows(text: string): string[][] {
 /** Parse CSV text with a header row into records keyed by column name. */
 export function parseCsv(text: string): Csv {
   const [headerRow, ...body] = parseRows(text.replace(/^\uFEFF/, ""));
-  if (headerRow === undefined) throw new Error("CSV is empty");
+  if (headerRow === undefined) throw new DataError("CSV is empty");
   const header = headerRow.map((name) => name.trim());
   const records = body.map((cells) =>
     Object.fromEntries(header.map((name, i) => [name, cells[i] ?? ""])),

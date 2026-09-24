@@ -1,16 +1,18 @@
 import { type DragEvent, useMemo, useRef, useState } from "react";
 
 import { validChangePoints } from "./core/bitemporal";
-import { buildDataset, type Dataset, entityRef, mergeSources, type SourceFile } from "./core/dataset";
+import { asUnmapped, buildDataset, type Dataset, entityRef, mergeSources, type SourceFile } from "./core/dataset";
 import { tidyInstant, validDomain } from "./core/domain";
+import { parseTimeColumnSettings, type TimeColumnSettings, type TimeColumns } from "./core/schema";
 import { entityIds, entityNames } from "./core/filter";
 import { type Instant, NOW } from "./core/time";
 import { deriveView } from "./core/view";
 import { DEFAULT_VIEW_STATE, type Filters, parseViewState, type ViewState } from "./core/viewState";
 import { readCsvFiles } from "./io/files";
-import { parseSources, SOURCES_KEY, VIEW_KEY } from "./io/storage";
+import { COLUMNS_KEY, parseSources, SOURCES_KEY, VIEW_KEY } from "./io/storage";
 import { SAMPLE_SOURCES } from "./sample";
 import { BitemporalPlane } from "./ui/BitemporalPlane";
+import { ColumnMapper } from "./ui/ColumnMapper";
 import { SnapshotPanel } from "./ui/SnapshotPanel";
 import { seriesColor } from "./ui/text";
 import { GUTTER, RIGHT, Timeline } from "./ui/Timeline";
@@ -21,13 +23,14 @@ import { useElementWidth } from "./ui/useElementWidth";
 import { usePersistentState } from "./ui/usePersistentState";
 
 const NO_SOURCES: readonly SourceFile[] = [];
+const NO_SETTINGS: TimeColumnSettings = {};
 
 type Loaded = { dataset: Dataset; error: null } | { dataset: null; error: string | null };
 
-function load(sources: readonly SourceFile[]): Loaded {
+function load(sources: readonly SourceFile[], settings: TimeColumnSettings): Loaded {
   if (sources.length === 0) return { dataset: null, error: null };
   try {
-    return { dataset: buildDataset(sources), error: null };
+    return { dataset: buildDataset(sources, settings), error: null };
   } catch (error) {
     return { dataset: null, error: error instanceof Error ? error.message : String(error) };
   }
@@ -37,9 +40,15 @@ function load(sources: readonly SourceFile[]): Loaded {
 export function App(): React.JSX.Element {
   const files = usePersistentState(SOURCES_KEY, parseSources, NO_SOURCES);
   const view = usePersistentState(VIEW_KEY, parseViewState, DEFAULT_VIEW_STATE);
+  const columns = usePersistentState(COLUMNS_KEY, parseTimeColumnSettings, NO_SETTINGS);
   const { value: sources, set: setSources } = files;
   const [dragging, setDragging] = useState(false);
-  const loaded = useMemo(() => load(sources), [sources]);
+  const [editing, setEditing] = useState<string | null>(null);
+  const loaded = useMemo(() => load(sources, columns.value), [sources, columns.value]);
+  const applyColumns = (table: string, chosen: TimeColumns): void => {
+    columns.set((current) => ({ ...current, [table]: chosen }));
+    setEditing(null);
+  };
   const addFiles = async (files: Iterable<File>): Promise<void> => {
     const added = await readCsvFiles(files);
     setSources((current) => mergeSources(current, added));
@@ -56,14 +65,23 @@ export function App(): React.JSX.Element {
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
-      <TopBar onFiles={addFiles} onSample={() => setSources(() => SAMPLE_SOURCES)} onClear={() => { files.reset(); view.reset(); }} hasData={sources.length > 0} />
+      <TopBar onFiles={addFiles} onSample={() => setSources(() => SAMPLE_SOURCES)} onClear={() => { files.reset(); view.reset(); columns.reset(); }} hasData={sources.length > 0} />
       {!files.remembered && (
         <div className="notice" role="status">
           These files are too large for this browser to remember — they will be gone after a reload.
         </div>
       )}
       {loaded.error !== null && <div className="error" role="alert">{loaded.error}</div>}
-      {loaded.dataset === null ? <EmptyState onSample={() => setSources(() => SAMPLE_SOURCES)} /> : <Explorer dataset={loaded.dataset} state={view.value} onStateChange={view.set} onReset={view.reset} />}
+      {loaded.dataset !== null && (
+        <ColumnMappers dataset={loaded.dataset} editing={editing} onApply={applyColumns} onCancel={() => setEditing(null)} />
+      )}
+      {loaded.dataset === null ? (
+        <EmptyState onSample={() => setSources(() => SAMPLE_SOURCES)} />
+      ) : (
+        loaded.dataset.tables.length > 0 && (
+          <Explorer dataset={loaded.dataset} state={view.value} onStateChange={view.set} onReset={view.reset} onEditColumns={setEditing} />
+        )
+      )}
     </div>
   );
 }
@@ -99,6 +117,28 @@ function TopBar({ onFiles, onSample, onClear, hasData }: TopBarProps): React.JSX
   );
 }
 
+type ColumnMappersProps = {
+  readonly dataset: Dataset;
+  readonly editing: string | null;
+  readonly onApply: (table: string, columns: TimeColumns) => void;
+  readonly onCancel: () => void;
+};
+
+/** A mapping card for every table that needs one, plus the table being edited, if any. */
+function ColumnMappers({ dataset, editing, onApply, onCancel }: ColumnMappersProps): React.JSX.Element {
+  const edited = dataset.tables.find((table) => table.name === editing);
+  return (
+    <>
+      {dataset.unmapped.map((table) => (
+        <ColumnMapper key={table.name} table={table} onApply={(chosen) => onApply(table.name, chosen)} />
+      ))}
+      {edited !== undefined && (
+        <ColumnMapper key={edited.name} table={asUnmapped(edited)} onApply={(chosen) => onApply(edited.name, chosen)} onCancel={onCancel} />
+      )}
+    </>
+  );
+}
+
 function EmptyState({ onSample }: { onSample: () => void }): React.JSX.Element {
   return (
     <div className="card empty-state">
@@ -106,7 +146,7 @@ function EmptyState({ onSample }: { onSample: () => void }): React.JSX.Element {
       <p>
         One file per table, named after the entity: <code>party.csv</code>, <code>group.csv</code>…
         Each needs <code>valid_from</code>, <code>valid_to</code>, <code>tech_valid_from</code> and{" "}
-        <code>tech_valid_to</code>. Columns like <code>party_a_id</code> link rows to <code>party</code>.
+        <code>tech_valid_to</code>, or you pick them from a list. Columns like <code>party_a_id</code> link rows to <code>party</code>.
         Drop a file again to replace it. Files stay in this browser and are remembered across reloads.
       </p>
       <button type="button" className="btn primary" onClick={onSample}>Try the sample</button>
@@ -119,9 +159,10 @@ type ExplorerProps = {
   readonly state: ViewState;
   readonly onStateChange: (update: (current: ViewState) => ViewState) => void;
   readonly onReset: () => void;
+  readonly onEditColumns: (table: string) => void;
 };
 
-function Explorer({ dataset, state, onStateChange, onReset }: ExplorerProps): React.JSX.Element {
+function Explorer({ dataset, state, onStateChange, onReset, onEditColumns }: ExplorerProps): React.JSX.Element {
   const { filters, zoom, cursor, selectedLane } = state;
   const patch = (change: Partial<ViewState>): void => onStateChange((current) => ({ ...current, ...change }));
   const setZoom = (next: ViewState["zoom"]): void => patch({ zoom: next });
@@ -155,7 +196,7 @@ function Explorer({ dataset, state, onStateChange, onReset }: ExplorerProps): Re
   return (
     <>
       <Toolbar filters={{ ...filters, entity }} entities={entities} ids={ids} techPoints={view.techPoints} onChange={onFilters} onResetZoom={() => setZoom(null)} onResetView={onReset} />
-      <Legend dataset={dataset} related={view.related} conflicts={view.conflicts} />
+      <Legend dataset={dataset} related={view.related} conflicts={view.conflicts} onEditColumns={onEditColumns} />
       <div className="workspace">
         <div>
           <section className="card chart" ref={chartRef}>
@@ -213,17 +254,25 @@ type LegendProps = {
   readonly dataset: Dataset;
   readonly related: readonly { table: string; id: string }[];
   readonly conflicts: ReadonlySet<string>;
+  readonly onEditColumns: (table: string) => void;
 };
 
-function Legend({ dataset, related, conflicts }: LegendProps): React.JSX.Element {
+function Legend({ dataset, related, conflicts, onEditColumns }: LegendProps): React.JSX.Element {
   return (
     <div className="legend">
       {dataset.tables.map((table) => (
-        <span key={table.name} className="chip" style={{ "--c": seriesColor(table.slot) } as React.CSSProperties}>
+        <button
+          key={table.name}
+          type="button"
+          className="chip"
+          title="Change time columns"
+          style={{ "--c": seriesColor(table.slot) } as React.CSSProperties}
+          onClick={() => onEditColumns(table.name)}
+        >
           <span className="swatch" />
           {table.name}
           <span className="count">{related.filter((v) => v.table === table.name).length}</span>
-        </span>
+        </button>
       ))}
       {conflicts.size > 0 && (
         <span className="chip warn" title="Versions of the same key whose valid × tech rectangles overlap">

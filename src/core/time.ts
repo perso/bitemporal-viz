@@ -1,3 +1,5 @@
+import { DataError } from "./errors";
+
 /** An instant in epoch milliseconds; `OPEN` marks an open (unbounded) end. */
 export type Instant = number;
 
@@ -21,13 +23,13 @@ export function parseInstant(raw: string): Instant {
   const text = raw.trim();
   if (OPEN_MARKERS.has(text.toLowerCase())) return OPEN;
   const match = TIMESTAMP.exec(text);
-  if (match === null) throw new Error(`Unrecognised timestamp "${raw}"`);
+  if (match === null) throw new DataError(`Unrecognised timestamp "${raw}"`);
   const [, year, month, day, hour = "00", minute = "00", second = "00", fraction = "", zone] = match;
   if (Number(year) >= 9999) return OPEN;
   const millis = fraction.padEnd(3, "0").slice(0, 3);
   const offset = zone === undefined ? "Z" : normaliseOffset(zone);
   const parsed = Date.parse(`${year}-${month}-${day}T${hour}:${minute}:${second}.${millis}${offset}`);
-  if (Number.isNaN(parsed)) throw new Error(`Invalid timestamp "${raw}"`);
+  if (Number.isNaN(parsed)) throw new DataError(`Invalid timestamp "${raw}"`);
   return parsed;
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { allVersions, buildDataset, mergeSources, splitRef } from "../../src/core/dataset";
+import { allVersions, asUnmapped, buildDataset, mergeSources, splitRef } from "../../src/core/dataset";
 import { OPEN } from "../../src/core/time";
 import { SAMPLE_SOURCES } from "../../src/sample";
 
@@ -65,18 +65,48 @@ describe("buildDataset", () => {
     expect(table("party")?.versions[1]?.techTo).toBe(OPEN);
   });
 
-  it("prefixes errors with the file name", () => {
-    expect(() => buildDataset([{ name: "bad.csv", text: "id\n1" }])).toThrow(/^bad\.csv: Missing columns/);
+  it("prefixes CSV errors with the file name", () => {
+    expect(() => buildDataset([{ name: "bad.csv", text: "" }])).toThrow("bad.csv: CSV is empty");
   });
 
-  it("rejects an empty start time", () => {
+  it("holds back a table without recognisable time columns", () => {
+    const text = "id,created,changed\n1,2024-01-01,";
+    expect(buildDataset([{ name: "odd.csv", text }]).unmapped).toEqual([
+      { name: "odd", header: ["id", "created", "changed"], guess: {}, sample: { id: "1", created: "2024-01-01", changed: "" }, error: null },
+    ]);
+  });
+
+  it("loads the other tables when one is held back", () => {
+    expect(buildDataset([party, { name: "odd.csv", text: "id\n1" }]).tables.map((t) => t.name)).toEqual(["party"]);
+  });
+
+  it("uses stored time columns", () => {
+    const text = "id,a,b,c,d\n1,2024-01-01,,2024-01-01,";
+    const settings = { odd: { validFrom: "a", validTo: "b", techFrom: "c", techTo: "d" } };
+    expect(buildDataset([{ name: "odd.csv", text }], settings).tables[0]?.versions).toHaveLength(1);
+  });
+
+  it("holds back a table whose time columns hold bad values", () => {
+    const text = "id,a,b,c,d\n1,soon,,2024-01-01,";
+    const settings = { odd: { validFrom: "a", validTo: "b", techFrom: "c", techTo: "d" } };
+    expect(buildDataset([{ name: "odd.csv", text }], settings).unmapped[0]?.error).toBe('Unrecognised timestamp "soon"');
+  });
+
+  it("holds back a table with an empty start time", () => {
     const text = `party_id,${TIMES}\n1,,,2024-01-01,\n`;
-    expect(() => buildDataset([{ name: "party.csv", text }])).toThrow("row 2: start times must not be empty");
+    expect(buildDataset([{ name: "party.csv", text }]).unmapped[0]?.error).toBe("row 2: start times must not be empty");
   });
 
   it("uses the table name as the lane when there are no ids", () => {
     const text = `note,${TIMES}\nhi,2024-01-01,,2024-01-01,\n`;
     expect(buildDataset([{ name: "notes.csv", text }]).tables[0]?.versions[0]?.lane).toBe("notes");
+  });
+});
+
+describe("asUnmapped", () => {
+  it("offers a loaded table's columns for editing", () => {
+    const loaded = buildDataset([party]).tables[0];
+    expect(loaded && asUnmapped(loaded)).toMatchObject({ name: "party", guess: loaded?.timeColumns, error: null });
   });
 });
 

@@ -2,6 +2,7 @@ import type { SourceFile } from "../core/dataset";
 
 export const SOURCES_KEY = "bitemporal-viz:sources:v1";
 export const VIEW_KEY = "bitemporal-viz:view:v1";
+export const COLUMNS_KEY = "bitemporal-viz:columns:v1";
 
 /** The browser's localStorage, or `null` where it is blocked (e.g. some private modes). */
 export function browserStorage(): Storage | null {

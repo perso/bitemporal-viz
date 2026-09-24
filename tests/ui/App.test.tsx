@@ -11,6 +11,24 @@ async function loadSample() {
   return user;
 }
 
+const ODD_CSV = "id,created,deleted,recorded,superseded\n1,2024-01-10,,2024-01-10 09:00,\n";
+const ODD_MAPPING = { "Valid from": "created", "Valid to": "deleted", "Tech valid from": "recorded", "Tech valid to": "superseded" };
+
+async function uploadOdd() {
+  const user = userEvent.setup();
+  render(<App />);
+  await user.upload(screen.getByLabelText("CSV files"), new File([ODD_CSV], "odd.csv"));
+  await screen.findByRole("form");
+  return user;
+}
+
+async function mapOdd(user: ReturnType<typeof userEvent.setup>, overrides: Record<string, string> = {}) {
+  for (const [label, column] of Object.entries({ ...ODD_MAPPING, ...overrides })) {
+    await user.selectOptions(screen.getByRole("combobox", { name: label }), column);
+  }
+  await user.click(screen.getByRole("button", { name: "Use these columns" }));
+}
+
 const timeline = () => screen.getByRole("img", { name: /Timeline/ });
 const laneLabels = () => [...timeline().querySelectorAll(".lane-label")].map((el) => el.textContent);
 
@@ -92,11 +110,61 @@ describe("App", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
-  it("reports a broken file", async () => {
+  it("reports an empty file", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.upload(screen.getByLabelText("CSV files"), new File(["id\n1"], "bad.csv"));
-    expect(await screen.findByRole("alert")).toHaveTextContent("bad.csv: Missing columns");
+    await user.upload(screen.getByLabelText("CSV files"), new File([""], "bad.csv"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("bad.csv: CSV is empty");
+  });
+
+  it("asks for time columns it cannot recognise", async () => {
+    await uploadOdd();
+    expect(screen.getByRole("form", { name: "Time columns for odd" })).toBeInTheDocument();
+  });
+
+  it("shows example values next to column names", async () => {
+    await uploadOdd();
+    const validFrom = screen.getByRole("combobox", { name: "Valid from" });
+    expect(within(validFrom).getByRole("option", { name: "created — 2024-01-10" })).toBeInTheDocument();
+  });
+
+  it("draws the table once its time columns are chosen", async () => {
+    const user = await uploadOdd();
+    await mapOdd(user);
+    expect(laneLabels()).toEqual(["odd"]);
+  });
+
+  it("remembers chosen time columns after a reload", async () => {
+    const user = await uploadOdd();
+    await mapOdd(user);
+    cleanup();
+    render(<App />);
+    expect(laneLabels()).toEqual(["odd"]);
+  });
+
+  it("keeps the apply button disabled until all four differ", async () => {
+    const user = await uploadOdd();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Valid from" }), "created");
+    expect(screen.getByRole("button", { name: "Use these columns" })).toBeDisabled();
+  });
+
+  it("explains a column with bad values", async () => {
+    const user = await uploadOdd();
+    await mapOdd(user, { "Valid from": "id" });
+    expect(screen.getByRole("alert")).toHaveTextContent('Unrecognised timestamp "1"');
+  });
+
+  it("reopens a loaded table's columns from the legend", async () => {
+    const user = await loadSample();
+    await user.click(screen.getByRole("button", { name: /^party/ }));
+    expect(screen.getByRole("combobox", { name: "Valid from" })).toHaveValue("valid_from");
+  });
+
+  it("closes the column editor on cancel", async () => {
+    const user = await loadSample();
+    await user.click(screen.getByRole("button", { name: /^party/ }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("form")).toBeNull();
   });
 
   it("remembers loaded files after a reload", async () => {
