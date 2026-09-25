@@ -13,9 +13,9 @@ describe("neighbourhood", () => {
     expect(neighbourhood(versions, "connection:100", 0)).toEqual(new Set(["connection:100"]));
   });
 
-  it("reaches the nodes and network of a connection in one hop", () => {
+  it("reaches the nodes, mapping and network of a connection in one hop", () => {
     expect(neighbourhood(versions, "connection:100", 1)).toEqual(
-      new Set(["connection:100", "node:1", "node:2", "network:10"]),
+      new Set(["connection:100", "node:1", "node:2", "network_connection:1000", "network:10"]),
     );
   });
 });
@@ -31,8 +31,8 @@ describe("relatedVersions", () => {
       "node 2",
       "network 10",
       "connection 100",
-      "network 10 · connection 100",
-      "network 10 · connection 100 · node 1 · node 2",
+      "network_connection 1000",
+      "network_connection 1000 · network 10 · connection 100 · node 1 · node 2",
     ]);
   });
 
@@ -43,7 +43,7 @@ describe("relatedVersions", () => {
 
 describe("entityNames", () => {
   it("lists every referenced entity", () => {
-    expect(entityNames(versions)).toEqual(["connection", "network", "node"]);
+    expect(entityNames(versions)).toEqual(["connection", "network", "network_connection", "node"]);
   });
 });
 

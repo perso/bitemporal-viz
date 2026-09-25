@@ -12,6 +12,7 @@ const TIME_SETTINGS = { validFrom: "valid_from", validTo: "valid_to", techFrom: 
 
 const sample = buildDataset(SAMPLE_SOURCES);
 const table = (name: string) => sample.tables.find((t) => t.name === name);
+const linkTable = buildDataset([node, link]).tables.find((t) => t.name === "node_link");
 
 describe("buildDataset", () => {
   it("puts tables with an own key before the rest", () => {
@@ -26,16 +27,20 @@ describe("buildDataset", () => {
     expect(table("connection")?.keyColumn).toBe("connection_id");
   });
 
+  it("detects the own key of a mapping table", () => {
+    expect(table("network_connection")?.keyColumn).toBe("network_connection_id");
+  });
+
   it("has no own key for a link table", () => {
-    expect(table("network_connection")?.keyColumn).toBeNull();
+    expect(linkTable?.keyColumn).toBeNull();
   });
 
   it("uses every reference as the lane of a link table", () => {
-    expect(table("network_connection")?.versions[0]?.lane).toBe("network 10 · connection 100");
+    expect(linkTable?.versions[0]?.lane).toBe("node 1 · node 2");
   });
 
   it("shortens a composite lane label to its values", () => {
-    expect(table("joined")?.versions[0]?.laneLabel).toBe("10 · 100 · 1 · 2");
+    expect(table("joined")?.versions[0]?.laneLabel).toBe("1000 · 10 · 100 · 1 · 2");
   });
 
   it("keeps a single-key lane label readable", () => {
@@ -47,7 +52,7 @@ describe("buildDataset", () => {
   });
 
   it("falls back to the lane label when nothing is descriptive", () => {
-    expect(table("network_connection")?.versions[0]?.label).toBe("10 · 100");
+    expect(linkTable?.versions[0]?.label).toBe("1 · 2");
   });
 
   it("collects entity references", () => {
@@ -55,7 +60,7 @@ describe("buildDataset", () => {
   });
 
   it("identifies a link row by all of its references", () => {
-    expect(table("network_connection")?.versions[0]?.keyRefs).toEqual(["network:10", "connection:100"]);
+    expect(linkTable?.versions[0]?.keyRefs).toEqual(["node:1", "node:2"]);
   });
 
   it("skips empty references", () => {
