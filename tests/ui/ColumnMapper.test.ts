@@ -24,7 +24,7 @@ describe("withLink", () => {
   const keys = { key: null, links: [{ column: "owner_id", entity: "party" }] };
 
   it("points a column at a table", () => {
-    expect(withLink(keys, "group_id", "group").links).toContainEqual({ column: "group_id", entity: "group" });
+    expect(withLink(keys, "network_id", "network").links).toContainEqual({ column: "network_id", entity: "network" });
   });
 
   it("replaces a column's link", () => {

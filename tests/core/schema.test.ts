@@ -14,15 +14,15 @@ import {
   withoutTimeColumns,
 } from "../../src/core/schema";
 
-const ENTITIES = ["party", "group", "connection", "group_connection"];
+const ENTITIES = ["party", "network", "connection", "network_connection"];
 
 describe("tableNameFromFile", () => {
   it("strips the extension and normalises separators", () => {
-    expect(tableNameFromFile("Group Connection.csv")).toBe("group_connection");
+    expect(tableNameFromFile("Network Connection.csv")).toBe("network_connection");
   });
 
   it("turns dashes into underscores", () => {
-    expect(tableNameFromFile("group-connection.CSV")).toBe("group_connection");
+    expect(tableNameFromFile("network-connection.CSV")).toBe("network_connection");
   });
 });
 
@@ -86,7 +86,7 @@ describe("parseColumnSettings", () => {
   });
 
   it("drops malformed entries", () => {
-    expect(parseColumnSettings({ party: COLUMNS, group: { validFrom: "vf" }, x: 1 })).toEqual({ party: COLUMNS });
+    expect(parseColumnSettings({ party: COLUMNS, network: { validFrom: "vf" }, x: 1 })).toEqual({ party: COLUMNS });
   });
 
   it.each([null, [], "x"])("ignores %j", (raw) => {
@@ -116,12 +116,12 @@ describe("guessKeys", () => {
   });
 
   it("finds no key in a link table", () => {
-    expect(guessKeys("group_connection", ["group_id", "connection_id"], ENTITIES).key).toBeNull();
+    expect(guessKeys("network_connection", ["network_id", "connection_id"], ENTITIES).key).toBeNull();
   });
 });
 
 describe("resolveKeys", () => {
-  const stored = { key: "note", links: [{ column: "party_a_id", entity: "group" }] };
+  const stored = { key: "note", links: [{ column: "party_a_id", entity: "network" }] };
 
   it("prefers stored keys that fit the header", () => {
     expect(resolveKeys("connection", CONNECTION, ENTITIES, stored)).toEqual(stored);
@@ -175,8 +175,8 @@ describe("referencedEntity", () => {
     ["party_id", "party"],
     ["party_a_id", "party"],
     ["owner_party_id", "party"],
-    ["group_id", "group"],
-    ["group_connection_id", "group_connection"],
+    ["network_id", "network"],
+    ["network_connection_id", "network_connection"],
     ["connection_id", "connection"],
   ])("maps %s to %s", (column, entity) => {
     expect(referencedEntity(column, ENTITIES)).toBe(entity);

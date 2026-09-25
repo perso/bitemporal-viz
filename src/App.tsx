@@ -145,7 +145,7 @@ function EmptyState({ onSample }: { onSample: () => void }): React.JSX.Element {
     <div className="card empty-state">
       <h2>Drop CSV files here</h2>
       <p>
-        One file per table, named after the entity: <code>party.csv</code>, <code>group.csv</code>…
+        One file per table, named after the entity: <code>party.csv</code>, <code>network.csv</code>…
         Each needs <code>valid_from</code>, <code>valid_to</code>, <code>tech_valid_from</code> and{" "}
         <code>tech_valid_to</code>, or you pick them from a list. Columns like <code>party_a_id</code> link rows to <code>party</code>.
         Drop a file again to replace it. Files stay in this browser and are remembered across reloads.

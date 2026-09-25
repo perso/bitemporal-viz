@@ -13,9 +13,9 @@ describe("neighbourhood", () => {
     expect(neighbourhood(versions, "connection:100", 0)).toEqual(new Set(["connection:100"]));
   });
 
-  it("reaches the parties and group of a connection in one hop", () => {
+  it("reaches the parties and network of a connection in one hop", () => {
     expect(neighbourhood(versions, "connection:100", 1)).toEqual(
-      new Set(["connection:100", "party:1", "party:2", "group:10"]),
+      new Set(["connection:100", "party:1", "party:2", "network:10"]),
     );
   });
 });
@@ -25,14 +25,14 @@ describe("relatedVersions", () => {
     expect(lanes("connection:100", 0)).toEqual(["connection 100"]);
   });
 
-  it("shows a connection with its parties, group, mapping and joined rows", () => {
+  it("shows a connection with its parties, network, mapping and joined rows", () => {
     expect(lanes("connection:100", 1)).toEqual([
       "party 1",
       "party 2",
-      "group 10",
+      "network 10",
       "connection 100",
-      "group 10 · connection 100",
-      "group 10 · connection 100 · party 1 · party 2",
+      "network 10 · connection 100",
+      "network 10 · connection 100 · party 1 · party 2",
     ]);
   });
 
@@ -43,13 +43,13 @@ describe("relatedVersions", () => {
 
 describe("entityNames", () => {
   it("lists every referenced entity", () => {
-    expect(entityNames(versions)).toEqual(["connection", "group", "party"]);
+    expect(entityNames(versions)).toEqual(["connection", "network", "party"]);
   });
 });
 
 describe("entityIds", () => {
   it("lists distinct ids of one entity", () => {
-    expect(entityIds(versions, "group")).toEqual(["10", "11"]);
+    expect(entityIds(versions, "network")).toEqual(["10", "11"]);
   });
 });
 

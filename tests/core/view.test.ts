@@ -26,8 +26,8 @@ describe("deriveView", () => {
   });
 
   it("lays out lanes in table order", () => {
-    const view = deriveView(dataset, { seed: "group:11", hops: 1, asOf: NOW });
-    expect(view.lanes.map((l) => l.table)).toEqual(["party", "party", "group", "connection", "group_connection", "joined"]);
+    const view = deriveView(dataset, { seed: "network:11", hops: 1, asOf: NOW });
+    expect(view.lanes.map((l) => l.table)).toEqual(["party", "party", "network", "connection", "network_connection", "joined"]);
   });
 
   it("offers the tech change points of the filtered rows", () => {
