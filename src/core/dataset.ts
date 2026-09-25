@@ -14,7 +14,7 @@ import {
 } from "./schema";
 import { type Instant, OPEN, parseInstant } from "./time";
 
-/** An entity identity such as `"party:1"`. */
+/** An entity identity such as `"node:1"`. */
 export type EntityRef = string;
 
 /** One bitemporal row: a rectangle in valid time × tech time. */
@@ -27,7 +27,7 @@ export type Version = {
   readonly label: string;
   readonly record: CsvRecord;
   readonly refs: readonly EntityRef[];
-  /** The references that identify this row's lane, e.g. `["party:1"]`. */
+  /** The references that identify this row's lane, e.g. `["node:1"]`. */
   readonly keyRefs: readonly EntityRef[];
   readonly validFrom: Instant;
   readonly validTo: Instant;
@@ -68,7 +68,7 @@ export type SourceFile = { readonly name: string; readonly text: string };
 
 export const entityRef = (entity: string, id: string): EntityRef => `${entity}:${id}`;
 
-/** Split `"party:1"` into `["party", "1"]`. */
+/** Split `"node:1"` into `["node", "1"]`. */
 export function splitRef(ref: EntityRef): [string, string] {
   const at = ref.indexOf(":");
   return [ref.slice(0, at), ref.slice(at + 1)];
@@ -77,7 +77,7 @@ export function splitRef(ref: EntityRef): [string, string] {
 /**
  * Replace sources that share a table name, append new ones.
  *
- * @example mergeSources([party, joined], [joinedV2]) // [party, joinedV2]
+ * @example mergeSources([node, joined], [joinedV2]) // [node, joinedV2]
  */
 export function mergeSources(
   current: readonly SourceFile[],
@@ -177,7 +177,7 @@ function laneKey(table: TableShape, record: CsvRecord): string {
   return table.laneColumns.map((ref) => `${ref.entity} ${record[ref.column] ?? ""}`).join(" · ");
 }
 
-/** `"party 1"` for a single key, `"10 · 100"` for a composite one. */
+/** `"node 1"` for a single key, `"10 · 100"` for a composite one. */
 function laneLabel(table: TableShape, record: CsvRecord): string {
   if (table.laneColumns.length !== 1) {
     return table.laneColumns.map((ref) => record[ref.column] ?? "").join(" · ") || table.name;

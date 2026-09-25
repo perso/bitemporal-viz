@@ -13,9 +13,9 @@ describe("neighbourhood", () => {
     expect(neighbourhood(versions, "connection:100", 0)).toEqual(new Set(["connection:100"]));
   });
 
-  it("reaches the parties and network of a connection in one hop", () => {
+  it("reaches the nodes and network of a connection in one hop", () => {
     expect(neighbourhood(versions, "connection:100", 1)).toEqual(
-      new Set(["connection:100", "party:1", "party:2", "network:10"]),
+      new Set(["connection:100", "node:1", "node:2", "network:10"]),
     );
   });
 });
@@ -25,14 +25,14 @@ describe("relatedVersions", () => {
     expect(lanes("connection:100", 0)).toEqual(["connection 100"]);
   });
 
-  it("shows a connection with its parties, network, mapping and joined rows", () => {
+  it("shows a connection with its nodes, network, mapping and joined rows", () => {
     expect(lanes("connection:100", 1)).toEqual([
-      "party 1",
-      "party 2",
+      "node 1",
+      "node 2",
       "network 10",
       "connection 100",
       "network 10 · connection 100",
-      "network 10 · connection 100 · party 1 · party 2",
+      "network 10 · connection 100 · node 1 · node 2",
     ]);
   });
 
@@ -43,7 +43,7 @@ describe("relatedVersions", () => {
 
 describe("entityNames", () => {
   it("lists every referenced entity", () => {
-    expect(entityNames(versions)).toEqual(["connection", "network", "party"]);
+    expect(entityNames(versions)).toEqual(["connection", "network", "node"]);
   });
 });
 

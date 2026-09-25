@@ -1,4 +1,4 @@
-connection_id,party_a_id,party_b_id,role_a,role_b,valid_from,valid_to,tech_valid_from,tech_valid_to
+connection_id,node_a_id,node_b_id,role_a,role_b,valid_from,valid_to,tech_valid_from,tech_valid_to
 100,1,2,supplier,customer,2024-02-15,,2024-02-15 10:00:05,2024-05-01 09:00:00
 100,1,2,supplier,customer,2024-02-15,2024-05-01,2024-05-01 09:00:00,
 100,1,2,supplier,reseller,2024-05-01,,2024-05-01 09:00:00,2024-10-02 16:00:05

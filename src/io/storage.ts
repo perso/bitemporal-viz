@@ -51,7 +51,7 @@ export function saveItem(
 /**
  * Keep only well-formed sources from stored JSON.
  *
- * @example parseSources([{ name: "party.csv", text: "..." }, 42]) // [{ name: "party.csv", ... }]
+ * @example parseSources([{ name: "node.csv", text: "..." }, 42]) // [{ name: "node.csv", ... }]
  */
 export function parseSources(raw: unknown): SourceFile[] {
   return Array.isArray(raw) ? raw.filter(isSource) : [];

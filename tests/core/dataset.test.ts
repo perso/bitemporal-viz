@@ -5,8 +5,8 @@ import { OPEN } from "../../src/core/time";
 import { SAMPLE_SOURCES } from "../../src/sample";
 
 const TIMES = "valid_from,valid_to,tech_valid_from,tech_valid_to";
-const party = { name: "party.csv", text: `party_id,name,${TIMES}\n1,Alice,2024-01-01,,2024-01-01,\n` };
-const link = { name: "party_link.csv", text: `party_a_id,party_b_id,${TIMES}\n1,2,2024-01-01,,2024-01-01,\n` };
+const node = { name: "node.csv", text: `node_id,name,${TIMES}\n1,Alice,2024-01-01,,2024-01-01,\n` };
+const link = { name: "node_link.csv", text: `node_a_id,node_b_id,${TIMES}\n1,2,2024-01-01,,2024-01-01,\n` };
 
 const TIME_SETTINGS = { validFrom: "valid_from", validTo: "valid_to", techFrom: "tech_valid_from", techTo: "tech_valid_to" };
 
@@ -15,11 +15,11 @@ const table = (name: string) => sample.tables.find((t) => t.name === name);
 
 describe("buildDataset", () => {
   it("puts tables with an own key before the rest", () => {
-    expect(buildDataset([link, party]).tables.map((t) => t.name)).toEqual(["party", "party_link"]);
+    expect(buildDataset([link, node]).tables.map((t) => t.name)).toEqual(["node", "node_link"]);
   });
 
   it("keeps the load-order slot for colours", () => {
-    expect(buildDataset([link, party]).tables.map((t) => t.slot)).toEqual([1, 0]);
+    expect(buildDataset([link, node]).tables.map((t) => t.slot)).toEqual([1, 0]);
   });
 
   it("detects the own key column", () => {
@@ -39,7 +39,7 @@ describe("buildDataset", () => {
   });
 
   it("keeps a single-key lane label readable", () => {
-    expect(table("party")?.versions[0]?.laneLabel).toBe("party 1");
+    expect(table("node")?.versions[0]?.laneLabel).toBe("node 1");
   });
 
   it("labels a row with its first two descriptive values", () => {
@@ -51,7 +51,7 @@ describe("buildDataset", () => {
   });
 
   it("collects entity references", () => {
-    expect(table("connection")?.versions[0]?.refs).toEqual(["connection:100", "party:1", "party:2"]);
+    expect(table("connection")?.versions[0]?.refs).toEqual(["connection:100", "node:1", "node:2"]);
   });
 
   it("identifies a link row by all of its references", () => {
@@ -59,12 +59,12 @@ describe("buildDataset", () => {
   });
 
   it("skips empty references", () => {
-    const text = `party_id,owner_party_id,${TIMES}\n1,,2024-01-01,,2024-01-01,\n`;
-    expect(buildDataset([{ name: "party.csv", text }]).tables[0]?.versions[0]?.refs).toEqual(["party:1"]);
+    const text = `node_id,owner_node_id,${TIMES}\n1,,2024-01-01,,2024-01-01,\n`;
+    expect(buildDataset([{ name: "node.csv", text }]).tables[0]?.versions[0]?.refs).toEqual(["node:1"]);
   });
 
   it("reads blank ends as open", () => {
-    expect(table("party")?.versions[1]?.techTo).toBe(OPEN);
+    expect(table("node")?.versions[1]?.techTo).toBe(OPEN);
   });
 
   it("prefixes CSV errors with the file name", () => {
@@ -79,7 +79,7 @@ describe("buildDataset", () => {
   });
 
   it("loads the other tables when one is held back", () => {
-    expect(buildDataset([party, { name: "odd.csv", text: "id\n1" }]).tables.map((t) => t.name)).toEqual(["party"]);
+    expect(buildDataset([node, { name: "odd.csv", text: "id\n1" }]).tables.map((t) => t.name)).toEqual(["node"]);
   });
 
   it("uses stored time columns", () => {
@@ -95,8 +95,8 @@ describe("buildDataset", () => {
   });
 
   it("holds back a table with an empty start time", () => {
-    const text = `party_id,${TIMES}\n1,,,2024-01-01,\n`;
-    expect(buildDataset([{ name: "party.csv", text }]).unmapped[0]?.error).toBe("row 2: start times must not be empty");
+    const text = `node_id,${TIMES}\n1,,,2024-01-01,\n`;
+    expect(buildDataset([{ name: "node.csv", text }]).unmapped[0]?.error).toBe("row 2: start times must not be empty");
   });
 
   it("uses a stored key", () => {
@@ -106,15 +106,15 @@ describe("buildDataset", () => {
   });
 
   it("uses a stored link", () => {
-    const text = `party_id,supplier_id,${TIMES}\n1,2,2024-01-01,,2024-01-01,\n`;
-    const keys = { key: "party_id", links: [{ column: "supplier_id", entity: "party" }] };
-    const loaded = buildDataset([{ name: "party.csv", text }], { party: { ...TIME_SETTINGS, keys } });
-    expect(loaded.tables[0]?.versions[0]?.refs).toEqual(["party:1", "party:2"]);
+    const text = `node_id,supplier_id,${TIMES}\n1,2,2024-01-01,,2024-01-01,\n`;
+    const keys = { key: "node_id", links: [{ column: "supplier_id", entity: "node" }] };
+    const loaded = buildDataset([{ name: "node.csv", text }], { node: { ...TIME_SETTINGS, keys } });
+    expect(loaded.tables[0]?.versions[0]?.refs).toEqual(["node:1", "node:2"]);
   });
 
   it("puts every row in one lane when the key is set to none and nothing links", () => {
-    const settings = { party: { ...TIME_SETTINGS, keys: { key: null, links: [] } } };
-    expect(buildDataset([party], settings).tables[0]?.versions[0]?.lane).toBe("party");
+    const settings = { node: { ...TIME_SETTINGS, keys: { key: null, links: [] } } };
+    expect(buildDataset([node], settings).tables[0]?.versions[0]?.lane).toBe("node");
   });
 
   it("uses the table name as the lane when there are no ids", () => {
@@ -125,27 +125,27 @@ describe("buildDataset", () => {
 
 describe("asUnmapped", () => {
   it("offers a loaded table's columns for editing", () => {
-    const loaded = buildDataset([party]).tables[0];
-    expect(loaded && asUnmapped(loaded)).toMatchObject({ name: "party", guess: loaded?.timeColumns, error: null });
+    const loaded = buildDataset([node]).tables[0];
+    expect(loaded && asUnmapped(loaded)).toMatchObject({ name: "node", guess: loaded?.timeColumns, error: null });
   });
 
   it("offers a loaded table's key and links for editing", () => {
-    const loaded = buildDataset([party, link]).tables[1];
+    const loaded = buildDataset([node, link]).tables[1];
     expect(loaded && asUnmapped(loaded).keys).toEqual({
       key: null,
-      links: [{ column: "party_a_id", entity: "party" }, { column: "party_b_id", entity: "party" }],
+      links: [{ column: "node_a_id", entity: "node" }, { column: "node_b_id", entity: "node" }],
     });
   });
 });
 
 describe("mergeSources", () => {
   it("replaces a source with the same table name in place", () => {
-    const updated = { name: "Party.csv", text: "new" };
-    expect(mergeSources([party, link], [updated])).toEqual([updated, link]);
+    const updated = { name: "Node.csv", text: "new" };
+    expect(mergeSources([node, link], [updated])).toEqual([updated, link]);
   });
 
   it("appends new tables", () => {
-    expect(mergeSources([party], [link])).toEqual([party, link]);
+    expect(mergeSources([node], [link])).toEqual([node, link]);
   });
 });
 
@@ -157,6 +157,6 @@ describe("allVersions", () => {
 
 describe("splitRef", () => {
   it("splits on the first colon only", () => {
-    expect(splitRef("party:a:b")).toEqual(["party", "a:b"]);
+    expect(splitRef("node:a:b")).toEqual(["node", "a:b"]);
   });
 });

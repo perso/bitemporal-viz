@@ -6,7 +6,7 @@ const stored = {
   filters: { entity: "connection", id: "100", hops: 2, asOf: "all", showGuides: false },
   zoom: [10, 20],
   cursor: 15,
-  selectedLane: "party/party 1",
+  selectedLane: "node/node 1",
 };
 
 describe("parseViewState", () => {

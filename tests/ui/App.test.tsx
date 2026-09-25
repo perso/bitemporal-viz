@@ -40,7 +40,7 @@ describe("App", () => {
 
   it("draws a lane per key after loading the sample", async () => {
     await loadSample();
-    expect(laneLabels()).toContain("party 1");
+    expect(laneLabels()).toContain("node 1");
   });
 
   it("focuses on one entity", async () => {
@@ -66,7 +66,7 @@ describe("App", () => {
   it("jumps along the tech slider", async () => {
     await loadSample();
     fireEvent.change(screen.getByRole("slider", { name: "Tech time" }), { target: { value: "0" } });
-    expect(laneLabels()).toEqual(["party 1"]);
+    expect(laneLabels()).toEqual(["node 1"]);
   });
 
   it("fills the snapshot panel on click", async () => {
@@ -97,14 +97,14 @@ describe("App", () => {
 
   it("shows a tooltip on hover", async () => {
     await loadSample();
-    const bar = timeline().querySelector("[data-version='party#3']");
+    const bar = timeline().querySelector("[data-version='node#3']");
     fireEvent.pointerEnter(bar as Element, { clientX: 10, clientY: 10 });
     expect(screen.getByRole("tooltip")).toHaveTextContent("Alice Group Oy");
   });
 
   it("hides the tooltip when the pointer leaves", async () => {
     await loadSample();
-    const bar = timeline().querySelector("[data-version='party#3']") as Element;
+    const bar = timeline().querySelector("[data-version='node#3']") as Element;
     fireEvent.pointerEnter(bar, { clientX: 10, clientY: 10 });
     fireEvent.pointerLeave(bar);
     expect(screen.queryByRole("tooltip")).toBeNull();
@@ -187,8 +187,8 @@ describe("App", () => {
 
   it("pre-fills the guessed key when reopened from the legend", async () => {
     const user = await loadSample();
-    await user.click(screen.getByRole("button", { name: /^party/ }));
-    expect(screen.getByRole("combobox", { name: "Key" })).toHaveValue("party_id");
+    await user.click(screen.getByRole("button", { name: /^node/ }));
+    expect(screen.getByRole("combobox", { name: "Key" })).toHaveValue("node_id");
   });
 
   it("explains a column with bad values", async () => {
@@ -199,13 +199,13 @@ describe("App", () => {
 
   it("reopens a loaded table's columns from the legend", async () => {
     const user = await loadSample();
-    await user.click(screen.getByRole("button", { name: /^party/ }));
+    await user.click(screen.getByRole("button", { name: /^node/ }));
     expect(screen.getByRole("combobox", { name: "Valid from" })).toHaveValue("valid_from");
   });
 
   it("closes the column editor on cancel", async () => {
     const user = await loadSample();
-    await user.click(screen.getByRole("button", { name: /^party/ }));
+    await user.click(screen.getByRole("button", { name: /^node/ }));
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("form")).toBeNull();
   });
@@ -215,7 +215,7 @@ describe("App", () => {
     await userEvent.setup().click(screen.getAllByRole("button", { name: "Load sample" })[0] as HTMLElement);
     unmount();
     render(<App />);
-    expect(laneLabels()).toContain("party 1");
+    expect(laneLabels()).toContain("node 1");
   });
 
   it("forgets files on clear", async () => {

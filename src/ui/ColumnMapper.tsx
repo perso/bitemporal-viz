@@ -126,7 +126,7 @@ function KeyFields({ table, time, tables, keys, onChange }: KeyFieldsProps): Rea
 /**
  * Point `column` at `entity`, or at nothing when `entity` is empty.
  *
- * @example withLink({ key: null, links: [] }, "owner_id", "party") // { key: null, links: [{ column: "owner_id", entity: "party" }] }
+ * @example withLink({ key: null, links: [] }, "owner_id", "node") // { key: null, links: [{ column: "owner_id", entity: "node" }] }
  */
 export function withLink(keys: Keys, column: string, entity: string): Keys {
   const others = keys.links.filter((link) => link.column !== column);

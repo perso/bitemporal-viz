@@ -21,7 +21,7 @@ describe("optionLabel", () => {
 });
 
 describe("withLink", () => {
-  const keys = { key: null, links: [{ column: "owner_id", entity: "party" }] };
+  const keys = { key: null, links: [{ column: "owner_id", entity: "node" }] };
 
   it("points a column at a table", () => {
     expect(withLink(keys, "network_id", "network").links).toContainEqual({ column: "network_id", entity: "network" });

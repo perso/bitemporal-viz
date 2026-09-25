@@ -14,7 +14,7 @@ import {
   withoutTimeColumns,
 } from "../../src/core/schema";
 
-const ENTITIES = ["party", "network", "connection", "network_connection"];
+const ENTITIES = ["node", "network", "connection", "network_connection"];
 
 describe("tableNameFromFile", () => {
   it("strips the extension and normalises separators", () => {
@@ -82,11 +82,11 @@ describe("completeTimeColumns", () => {
 
 describe("parseColumnSettings", () => {
   it("keeps complete entries", () => {
-    expect(parseColumnSettings({ party: COLUMNS })).toEqual({ party: COLUMNS });
+    expect(parseColumnSettings({ node: COLUMNS })).toEqual({ node: COLUMNS });
   });
 
   it("drops malformed entries", () => {
-    expect(parseColumnSettings({ party: COLUMNS, network: { validFrom: "vf" }, x: 1 })).toEqual({ party: COLUMNS });
+    expect(parseColumnSettings({ node: COLUMNS, network: { validFrom: "vf" }, x: 1 })).toEqual({ node: COLUMNS });
   });
 
   it.each([null, [], "x"])("ignores %j", (raw) => {
@@ -94,17 +94,17 @@ describe("parseColumnSettings", () => {
   });
 
   it("keeps well-formed keys", () => {
-    const party = { ...COLUMNS, keys: { key: "id", links: [{ column: "owner", entity: "party" }] } };
-    expect(parseColumnSettings({ party })).toEqual({ party });
+    const node = { ...COLUMNS, keys: { key: "id", links: [{ column: "owner", entity: "node" }] } };
+    expect(parseColumnSettings({ node })).toEqual({ node });
   });
 
   it("drops malformed keys but keeps the time columns", () => {
-    expect(parseColumnSettings({ party: { ...COLUMNS, keys: { key: 1, links: [] } } })).toEqual({ party: COLUMNS });
+    expect(parseColumnSettings({ node: { ...COLUMNS, keys: { key: 1, links: [] } } })).toEqual({ node: COLUMNS });
   });
 });
 
-const CONNECTION = ["connection_id", "party_a_id", "note"];
-const GUESSED = { key: "connection_id", links: [{ column: "party_a_id", entity: "party" }] };
+const CONNECTION = ["connection_id", "node_a_id", "note"];
+const GUESSED = { key: "connection_id", links: [{ column: "node_a_id", entity: "node" }] };
 
 describe("guessKeys", () => {
   it("takes the column named after the table as the key", () => {
@@ -112,7 +112,7 @@ describe("guessKeys", () => {
   });
 
   it("links the other id columns", () => {
-    expect(guessKeys("connection", CONNECTION, ENTITIES).links).toEqual([{ column: "party_a_id", entity: "party" }]);
+    expect(guessKeys("connection", CONNECTION, ENTITIES).links).toEqual([{ column: "node_a_id", entity: "node" }]);
   });
 
   it("finds no key in a link table", () => {
@@ -121,7 +121,7 @@ describe("guessKeys", () => {
 });
 
 describe("resolveKeys", () => {
-  const stored = { key: "note", links: [{ column: "party_a_id", entity: "network" }] };
+  const stored = { key: "note", links: [{ column: "node_a_id", entity: "network" }] };
 
   it("prefers stored keys that fit the header", () => {
     expect(resolveKeys("connection", CONNECTION, ENTITIES, stored)).toEqual(stored);
@@ -152,29 +152,29 @@ describe("withoutTimeColumns", () => {
   });
 
   it("drops a link on a time column", () => {
-    expect(withoutTimeColumns({ key: null, links: [{ column: "b", entity: "party" }] }, time).links).toEqual([]);
+    expect(withoutTimeColumns({ key: null, links: [{ column: "b", entity: "node" }] }, time).links).toEqual([]);
   });
 
   it("drops a link on the key column", () => {
-    expect(withoutTimeColumns({ key: "id", links: [{ column: "id", entity: "party" }] }, time).links).toEqual([]);
+    expect(withoutTimeColumns({ key: "id", links: [{ column: "id", entity: "node" }] }, time).links).toEqual([]);
   });
 });
 
 describe("keyReferences", () => {
   it("lists the key as a reference to the table itself, in header order", () => {
     const keys = { key: "id", links: [{ column: "owner", entity: "person" }] };
-    expect(keyReferences("party", ["owner", "name", "id"], keys)).toEqual([
+    expect(keyReferences("node", ["owner", "name", "id"], keys)).toEqual([
       { column: "owner", entity: "person" },
-      { column: "id", entity: "party" },
+      { column: "id", entity: "node" },
     ]);
   });
 });
 
 describe("referencedEntity", () => {
   it.each([
-    ["party_id", "party"],
-    ["party_a_id", "party"],
-    ["owner_party_id", "party"],
+    ["node_id", "node"],
+    ["node_a_id", "node"],
+    ["owner_node_id", "node"],
     ["network_id", "network"],
     ["network_connection_id", "network_connection"],
     ["connection_id", "connection"],
@@ -183,7 +183,7 @@ describe("referencedEntity", () => {
   });
 
   it("ignores columns without an _id suffix", () => {
-    expect(referencedEntity("party_name", ENTITIES)).toBeNull();
+    expect(referencedEntity("node_name", ENTITIES)).toBeNull();
   });
 
   it("ignores ids of unknown entities", () => {
@@ -193,9 +193,9 @@ describe("referencedEntity", () => {
 
 describe("inferReferences", () => {
   it("lists referencing columns in header order", () => {
-    expect(inferReferences(["connection_id", "party_a_id", "role_a"], ENTITIES)).toEqual([
+    expect(inferReferences(["connection_id", "node_a_id", "role_a"], ENTITIES)).toEqual([
       { column: "connection_id", entity: "connection" },
-      { column: "party_a_id", entity: "party" },
+      { column: "node_a_id", entity: "node" },
     ]);
   });
 });
