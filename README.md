@@ -29,8 +29,8 @@ connection_id,node_a_id,node_b_id,role_a,role_b,valid_from,valid_to,tech_valid_f
 | everything else | Descriptive. The first two such values label the bar, and the tooltip shows them all. |
 
 A table whose own id is present (`connection_id` in `connection.csv`) gets one lane per id.
-A table without one, like `network_connection.csv` or your join output, gets one lane per
-combination of its ids. If you drop a file with the same name again, it replaces the old
+A table without one, like your join output `joined.csv`, gets one lane per combination of
+its ids. If you drop a file with the same name again, it replaces the old
 one, so you can re-run the join and reload just `joined.csv`.
 
 Files never leave the browser. They are read locally and kept in `localStorage` together
