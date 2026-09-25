@@ -3,6 +3,9 @@
 A browser tool for looking at bitemporal tables side by side. Load your source tables and
 their join as CSVs, and every key's versions appear on one valid-time axis.
 
+Try it at <https://perso.github.io/bitemporal-viz/> — click **Load sample** for the demo
+data. Every push to `main` redeploys it. To run it locally:
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173 — click "Load sample" to see the demo data
