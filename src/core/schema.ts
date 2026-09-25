@@ -27,8 +27,14 @@ export type TimeRole = keyof TimeColumns;
 
 export const TIME_ROLES: readonly TimeRole[] = ["validFrom", "validTo", "techFrom", "techTo"];
 
-/** Time columns chosen by hand, per table name. */
-export type TimeColumnSettings = Readonly<Record<string, TimeColumns>>;
+/** A table's own key column, and the other columns that link to a table by its key. */
+export type Keys = { readonly key: string | null; readonly links: readonly Reference[] };
+
+/** Columns chosen by hand for one table. Settings saved before keys could be chosen lack `keys`. */
+export type TableColumns = TimeColumns & { readonly keys?: Keys };
+
+/** Columns chosen by hand, per table name. */
+export type ColumnSettings = Readonly<Record<string, TableColumns>>;
 
 /**
  * Guess each time column from the names in `columns.json`; roles without a match are left out.
@@ -61,20 +67,35 @@ export function completeTimeColumns(partial: Partial<TimeColumns>): TimeColumns 
 }
 
 /**
- * Keep only complete, well-formed entries from stored JSON.
+ * Keep only complete, well-formed entries from stored JSON; malformed keys are dropped on their own.
  *
- * @example parseTimeColumnSettings({ party: { validFrom: "vf", ... }, junk: 1 }) // { party: … }
+ * @example parseColumnSettings({ party: { validFrom: "vf", ... }, junk: 1 }) // { party: … }
  */
-export function parseTimeColumnSettings(raw: unknown): TimeColumnSettings {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
-  const entries = Object.entries(raw).filter(([, columns]) => isTimeColumns(columns));
-  return Object.fromEntries(entries) as TimeColumnSettings;
+export function parseColumnSettings(raw: unknown): ColumnSettings {
+  if (!isRecord(raw)) return {};
+  const entries = Object.entries(raw).flatMap(([table, columns]) =>
+    isTimeColumns(columns) ? [[table, withValidKeys(columns)] as const] : [],
+  );
+  return Object.fromEntries(entries);
 }
 
-const isTimeColumns = (value: unknown): value is TimeColumns =>
-  typeof value === "object" &&
-  value !== null &&
-  TIME_ROLES.every((role) => typeof (value as Record<string, unknown>)[role] === "string");
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isTimeColumns = (value: unknown): value is TimeColumns & { readonly keys?: unknown } =>
+  isRecord(value) && TIME_ROLES.every((role) => typeof value[role] === "string");
+
+function withValidKeys({ keys, ...time }: TimeColumns & { readonly keys?: unknown }): TableColumns {
+  return isKeys(keys) ? { ...time, keys } : time;
+}
+
+const isKeys = (value: unknown): value is Keys =>
+  isRecord(value) &&
+  (value.key === null || typeof value.key === "string") &&
+  Array.isArray(value.links) &&
+  value.links.every(
+    (link) => isRecord(link) && typeof link.column === "string" && typeof link.entity === "string",
+  );
 
 /**
  * Map a `*_id` column to the longest entity name its stem equals, starts or ends with.
@@ -104,4 +125,56 @@ export function inferReferences(
     const entity = referencedEntity(column, entities);
     return entity === null ? [] : [{ column, entity }];
   });
+}
+
+/**
+ * Guess the own key and the links from `*_id` column names.
+ *
+ * @example guessKeys("connection", ["connection_id", "party_a_id"], ["connection", "party"])
+ * // { key: "connection_id", links: [{ column: "party_a_id", entity: "party" }] }
+ */
+export function guessKeys(
+  table: string,
+  header: readonly string[],
+  entities: readonly string[],
+): Keys {
+  const references = inferReferences(header, entities);
+  const key = references.find((ref) => ref.entity === table)?.column ?? null;
+  return { key, links: references.filter((ref) => ref.column !== key) };
+}
+
+/**
+ * The stored keys when all their columns are still in the header, else a guess.
+ * Links to tables that are not loaded are left out, and come back when the table does.
+ */
+export function resolveKeys(
+  table: string,
+  header: readonly string[],
+  entities: readonly string[],
+  stored: Keys | undefined,
+): Keys {
+  const columns = [stored?.key ?? null, ...(stored?.links ?? []).map((link) => link.column)];
+  const fits = columns.every((column) => column === null || header.includes(column));
+  if (stored === undefined || !fits) return guessKeys(table, header, entities);
+  return { key: stored.key, links: stored.links.filter((link) => entities.includes(link.entity)) };
+}
+
+/** Drop a key or link that uses a time column, and links on the key column. */
+export function withoutTimeColumns(keys: Keys, time: Partial<TimeColumns>): Keys {
+  const taken = new Set(Object.values(time));
+  const key = keys.key !== null && taken.has(keys.key) ? null : keys.key;
+  const links = keys.links.filter((link) => !taken.has(link.column) && link.column !== key);
+  return { key, links };
+}
+
+/**
+ * Every key and link column as a reference, in header order; the key refers to the table itself.
+ *
+ * @example keyReferences("party", ["owner_id", "party_id"], { key: "party_id", links: [{ column: "owner_id", entity: "party" }] })
+ * // [{ column: "owner_id", entity: "party" }, { column: "party_id", entity: "party" }]
+ */
+export function keyReferences(table: string, header: readonly string[], keys: Keys): Reference[] {
+  const own = keys.key === null ? [] : [{ column: keys.key, entity: table }];
+  const position = (ref: Reference): number => header.indexOf(ref.column);
+  return [...own, ...keys.links].sort((a, b) => position(a) - position(b));
 }

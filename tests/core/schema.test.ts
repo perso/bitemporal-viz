@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   completeTimeColumns,
+  guessKeys,
   guessTimeColumns,
   inferReferences,
-  parseTimeColumnSettings,
+  keyReferences,
+  parseColumnSettings,
   referencedEntity,
+  resolveKeys,
   resolveTimeColumns,
   tableNameFromFile,
+  withoutTimeColumns,
 } from "../../src/core/schema";
 
 const ENTITIES = ["party", "group", "connection", "group_connection"];
@@ -76,17 +80,93 @@ describe("completeTimeColumns", () => {
   });
 });
 
-describe("parseTimeColumnSettings", () => {
+describe("parseColumnSettings", () => {
   it("keeps complete entries", () => {
-    expect(parseTimeColumnSettings({ party: COLUMNS })).toEqual({ party: COLUMNS });
+    expect(parseColumnSettings({ party: COLUMNS })).toEqual({ party: COLUMNS });
   });
 
   it("drops malformed entries", () => {
-    expect(parseTimeColumnSettings({ party: COLUMNS, group: { validFrom: "vf" }, x: 1 })).toEqual({ party: COLUMNS });
+    expect(parseColumnSettings({ party: COLUMNS, group: { validFrom: "vf" }, x: 1 })).toEqual({ party: COLUMNS });
   });
 
   it.each([null, [], "x"])("ignores %j", (raw) => {
-    expect(parseTimeColumnSettings(raw)).toEqual({});
+    expect(parseColumnSettings(raw)).toEqual({});
+  });
+
+  it("keeps well-formed keys", () => {
+    const party = { ...COLUMNS, keys: { key: "id", links: [{ column: "owner", entity: "party" }] } };
+    expect(parseColumnSettings({ party })).toEqual({ party });
+  });
+
+  it("drops malformed keys but keeps the time columns", () => {
+    expect(parseColumnSettings({ party: { ...COLUMNS, keys: { key: 1, links: [] } } })).toEqual({ party: COLUMNS });
+  });
+});
+
+const CONNECTION = ["connection_id", "party_a_id", "note"];
+const GUESSED = { key: "connection_id", links: [{ column: "party_a_id", entity: "party" }] };
+
+describe("guessKeys", () => {
+  it("takes the column named after the table as the key", () => {
+    expect(guessKeys("connection", CONNECTION, ENTITIES).key).toBe("connection_id");
+  });
+
+  it("links the other id columns", () => {
+    expect(guessKeys("connection", CONNECTION, ENTITIES).links).toEqual([{ column: "party_a_id", entity: "party" }]);
+  });
+
+  it("finds no key in a link table", () => {
+    expect(guessKeys("group_connection", ["group_id", "connection_id"], ENTITIES).key).toBeNull();
+  });
+});
+
+describe("resolveKeys", () => {
+  const stored = { key: "note", links: [{ column: "party_a_id", entity: "group" }] };
+
+  it("prefers stored keys that fit the header", () => {
+    expect(resolveKeys("connection", CONNECTION, ENTITIES, stored)).toEqual(stored);
+  });
+
+  it("keeps a stored choice of no key", () => {
+    expect(resolveKeys("connection", CONNECTION, ENTITIES, { key: null, links: [] })).toEqual({ key: null, links: [] });
+  });
+
+  it("guesses when a stored column is gone", () => {
+    expect(resolveKeys("connection", CONNECTION, ENTITIES, { key: "id", links: [] })).toEqual(GUESSED);
+  });
+
+  it("guesses without stored keys", () => {
+    expect(resolveKeys("connection", CONNECTION, ENTITIES, undefined)).toEqual(GUESSED);
+  });
+
+  it("leaves out links to tables that are not loaded", () => {
+    expect(resolveKeys("connection", CONNECTION, ["connection"], stored).links).toEqual([]);
+  });
+});
+
+describe("withoutTimeColumns", () => {
+  const time = { validFrom: "a", validTo: "b" };
+
+  it("drops a key that is a time column", () => {
+    expect(withoutTimeColumns({ key: "a", links: [] }, time).key).toBeNull();
+  });
+
+  it("drops a link on a time column", () => {
+    expect(withoutTimeColumns({ key: null, links: [{ column: "b", entity: "party" }] }, time).links).toEqual([]);
+  });
+
+  it("drops a link on the key column", () => {
+    expect(withoutTimeColumns({ key: "id", links: [{ column: "id", entity: "party" }] }, time).links).toEqual([]);
+  });
+});
+
+describe("keyReferences", () => {
+  it("lists the key as a reference to the table itself, in header order", () => {
+    const keys = { key: "id", links: [{ column: "owner", entity: "person" }] };
+    expect(keyReferences("party", ["owner", "name", "id"], keys)).toEqual([
+      { column: "owner", entity: "person" },
+      { column: "id", entity: "party" },
+    ]);
   });
 });
 

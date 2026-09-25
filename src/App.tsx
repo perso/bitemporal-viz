@@ -3,7 +3,7 @@ import { type DragEvent, useMemo, useRef, useState } from "react";
 import { validChangePoints } from "./core/bitemporal";
 import { asUnmapped, buildDataset, type Dataset, entityRef, mergeSources, type SourceFile } from "./core/dataset";
 import { tidyInstant, validDomain } from "./core/domain";
-import { parseTimeColumnSettings, type TimeColumnSettings, type TimeColumns } from "./core/schema";
+import { type ColumnSettings, parseColumnSettings, type TableColumns } from "./core/schema";
 import { entityIds, entityNames } from "./core/filter";
 import { type Instant, NOW } from "./core/time";
 import { deriveView } from "./core/view";
@@ -23,11 +23,11 @@ import { useElementWidth } from "./ui/useElementWidth";
 import { usePersistentState } from "./ui/usePersistentState";
 
 const NO_SOURCES: readonly SourceFile[] = [];
-const NO_SETTINGS: TimeColumnSettings = {};
+const NO_SETTINGS: ColumnSettings = {};
 
 type Loaded = { dataset: Dataset; error: null } | { dataset: null; error: string | null };
 
-function load(sources: readonly SourceFile[], settings: TimeColumnSettings): Loaded {
+function load(sources: readonly SourceFile[], settings: ColumnSettings): Loaded {
   if (sources.length === 0) return { dataset: null, error: null };
   try {
     return { dataset: buildDataset(sources, settings), error: null };
@@ -40,12 +40,12 @@ function load(sources: readonly SourceFile[], settings: TimeColumnSettings): Loa
 export function App(): React.JSX.Element {
   const files = usePersistentState(SOURCES_KEY, parseSources, NO_SOURCES);
   const view = usePersistentState(VIEW_KEY, parseViewState, DEFAULT_VIEW_STATE);
-  const columns = usePersistentState(COLUMNS_KEY, parseTimeColumnSettings, NO_SETTINGS);
+  const columns = usePersistentState(COLUMNS_KEY, parseColumnSettings, NO_SETTINGS);
   const { value: sources, set: setSources } = files;
   const [dragging, setDragging] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const loaded = useMemo(() => load(sources, columns.value), [sources, columns.value]);
-  const applyColumns = (table: string, chosen: TimeColumns): void => {
+  const applyColumns = (table: string, chosen: TableColumns): void => {
     columns.set((current) => ({ ...current, [table]: chosen }));
     setEditing(null);
   };
@@ -120,20 +120,21 @@ function TopBar({ onFiles, onSample, onClear, hasData }: TopBarProps): React.JSX
 type ColumnMappersProps = {
   readonly dataset: Dataset;
   readonly editing: string | null;
-  readonly onApply: (table: string, columns: TimeColumns) => void;
+  readonly onApply: (table: string, columns: TableColumns) => void;
   readonly onCancel: () => void;
 };
 
 /** A mapping card for every table that needs one, plus the table being edited, if any. */
 function ColumnMappers({ dataset, editing, onApply, onCancel }: ColumnMappersProps): React.JSX.Element {
   const edited = dataset.tables.find((table) => table.name === editing);
+  const tables = [...dataset.tables, ...dataset.unmapped].map((table) => table.name).sort();
   return (
     <>
       {dataset.unmapped.map((table) => (
-        <ColumnMapper key={table.name} table={table} onApply={(chosen) => onApply(table.name, chosen)} />
+        <ColumnMapper key={table.name} table={table} tables={tables} onApply={(chosen) => onApply(table.name, chosen)} />
       ))}
       {edited !== undefined && (
-        <ColumnMapper key={edited.name} table={asUnmapped(edited)} onApply={(chosen) => onApply(edited.name, chosen)} onCancel={onCancel} />
+        <ColumnMapper key={edited.name} table={asUnmapped(edited)} tables={tables} onApply={(chosen) => onApply(edited.name, chosen)} onCancel={onCancel} />
       )}
     </>
   );
@@ -265,7 +266,7 @@ function Legend({ dataset, related, conflicts, onEditColumns }: LegendProps): Re
           key={table.name}
           type="button"
           className="chip"
-          title="Change time columns"
+          title="Change columns and keys"
           style={{ "--c": seriesColor(table.slot) } as React.CSSProperties}
           onClick={() => onEditColumns(table.name)}
         >

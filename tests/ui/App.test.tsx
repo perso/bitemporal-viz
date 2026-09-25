@@ -119,7 +119,7 @@ describe("App", () => {
 
   it("asks for time columns it cannot recognise", async () => {
     await uploadOdd();
-    expect(screen.getByRole("form", { name: "Time columns for odd" })).toBeInTheDocument();
+    expect(screen.getByRole("form", { name: "Columns for odd" })).toBeInTheDocument();
   });
 
   it("shows example values next to column names", async () => {
@@ -146,6 +146,49 @@ describe("App", () => {
     const user = await uploadOdd();
     await user.selectOptions(screen.getByRole("combobox", { name: "Valid from" }), "created");
     expect(screen.getByRole("button", { name: "Use these columns" })).toBeDisabled();
+  });
+
+  it("draws one lane per value of the chosen key", async () => {
+    const user = await uploadOdd();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Key" }), "id");
+    await mapOdd(user);
+    expect(laneLabels()).toEqual(["odd 1"]);
+  });
+
+  it("draws one lane per value of a chosen link", async () => {
+    const user = await uploadOdd();
+    await user.selectOptions(screen.getByRole("combobox", { name: "id links to" }), "odd");
+    await mapOdd(user);
+    expect(laneLabels()).toEqual(["odd 1"]);
+  });
+
+  it("remembers the chosen key after a reload", async () => {
+    const user = await uploadOdd();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Key" }), "id");
+    await mapOdd(user);
+    cleanup();
+    render(<App />);
+    expect(laneLabels()).toEqual(["odd 1"]);
+  });
+
+  it("does not offer the key column as a link", async () => {
+    const user = await uploadOdd();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Key" }), "id");
+    expect(screen.queryByRole("combobox", { name: "id links to" })).toBeNull();
+  });
+
+  it("does not offer a time column as the key", async () => {
+    const user = await uploadOdd();
+    await mapOdd(user);
+    await user.click(screen.getByRole("button", { name: /^odd/ }));
+    const key = screen.getByRole("combobox", { name: "Key" });
+    expect(within(key).queryByRole("option", { name: /^created/ })).toBeNull();
+  });
+
+  it("pre-fills the guessed key when reopened from the legend", async () => {
+    const user = await loadSample();
+    await user.click(screen.getByRole("button", { name: /^party/ }));
+    expect(screen.getByRole("combobox", { name: "Key" })).toHaveValue("party_id");
   });
 
   it("explains a column with bad values", async () => {

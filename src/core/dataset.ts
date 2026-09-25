@@ -1,13 +1,16 @@
 import { type CsvRecord, parseCsv } from "./csv";
 import { DataError } from "./errors";
 import {
+  type ColumnSettings,
   completeTimeColumns,
-  inferReferences,
+  keyReferences,
+  type Keys,
   type Reference,
+  resolveKeys,
   resolveTimeColumns,
   tableNameFromFile,
-  type TimeColumnSettings,
   type TimeColumns,
+  withoutTimeColumns,
 } from "./schema";
 import { type Instant, OPEN, parseInstant } from "./time";
 
@@ -45,11 +48,12 @@ export type Table = {
   readonly versions: readonly Version[];
 };
 
-/** A table waiting for its time columns to be chosen, or re-chosen after an error. */
+/** A table waiting for its columns to be chosen, or re-chosen after an error. */
 export type UnmappedTable = {
   readonly name: string;
   readonly header: readonly string[];
   readonly guess: Partial<TimeColumns>;
+  readonly keys: Keys;
   /** The first row, to show example values next to each column name. */
   readonly sample: CsvRecord | undefined;
   readonly error: string | null;
@@ -90,7 +94,7 @@ export function mergeSources(
  */
 export function buildDataset(
   sources: readonly SourceFile[],
-  settings: TimeColumnSettings = {},
+  settings: ColumnSettings = {},
 ): Dataset {
   const entities = sources.map((file) => tableNameFromFile(file.name));
   const built = sources.map((file, slot) => buildTable(file, slot, entities, settings));
@@ -105,17 +109,20 @@ function buildTable(
   file: SourceFile,
   slot: number,
   entities: readonly string[],
-  settings: TimeColumnSettings,
+  settings: ColumnSettings,
 ): Table | UnmappedTable {
   const name = tableNameFromFile(file.name);
   const { header, records } = parseSource(file);
-  const guess = resolveTimeColumns(header, settings[name]);
+  const stored = settings[name];
+  const guess = resolveTimeColumns(header, stored);
+  const keys = resolveKeys(name, header, entities, stored?.keys);
   const timeColumns = completeTimeColumns(guess);
   const unmapped = (error: string | null): UnmappedTable =>
-    ({ name, header, guess, sample: records[0], error });
+    ({ name, header, guess, keys, sample: records[0], error });
   if (timeColumns === null) return unmapped(null);
-  const references = inferReferences(header, entities);
-  const keyColumn = references.find((ref) => ref.entity === name)?.column ?? null;
+  const usable = withoutTimeColumns(keys, timeColumns);
+  const references = keyReferences(name, header, usable);
+  const keyColumn = usable.key;
   const laneColumns = keyColumn === null ? references : [{ column: keyColumn, entity: name }];
   const shape = { name, header, timeColumns, references, keyColumn, laneColumns };
   try {
@@ -191,11 +198,15 @@ function rowLabel(table: TableShape, record: CsvRecord): string {
   return values.slice(0, 2).join(" · ");
 }
 
-/** A loaded table as a mapping candidate, so its time columns can be changed. */
+/** A loaded table as a mapping candidate, so its columns can be changed. */
 export const asUnmapped = (table: Table): UnmappedTable => ({
   name: table.name,
   header: table.header,
   guess: table.timeColumns,
+  keys: {
+    key: table.keyColumn,
+    links: table.references.filter((ref) => ref.column !== table.keyColumn),
+  },
   sample: table.versions[0]?.record,
   error: null,
 });

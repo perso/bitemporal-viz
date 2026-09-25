@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { optionLabel } from "../../src/ui/ColumnMapper";
+import { optionLabel, withLink } from "../../src/ui/ColumnMapper";
 
 describe("optionLabel", () => {
   it("adds the first value", () => {
@@ -17,5 +17,21 @@ describe("optionLabel", () => {
 
   it("shortens long values", () => {
     expect(optionLabel("note", { note: "x".repeat(40) })).toBe(`note — ${"x".repeat(23)}…`);
+  });
+});
+
+describe("withLink", () => {
+  const keys = { key: null, links: [{ column: "owner_id", entity: "party" }] };
+
+  it("points a column at a table", () => {
+    expect(withLink(keys, "group_id", "group").links).toContainEqual({ column: "group_id", entity: "group" });
+  });
+
+  it("replaces a column's link", () => {
+    expect(withLink(keys, "owner_id", "person").links).toEqual([{ column: "owner_id", entity: "person" }]);
+  });
+
+  it("removes a column's link when set to nothing", () => {
+    expect(withLink(keys, "owner_id", "").links).toEqual([]);
   });
 });
