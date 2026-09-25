@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { loadItem, parseSources, saveItem } from "../../src/io/storage";
 
 const KEY = "test-key";
-const party = { name: "party.csv", text: "party_id\n1" };
+const node = { name: "node.csv", text: "node_id\n1" };
 const asIs = (raw: unknown) => raw;
 
 function refusingStorage(name: string): Storage {
@@ -15,17 +15,17 @@ function refusingStorage(name: string): Storage {
 
 describe("saveItem and loadItem", () => {
   it("round-trips JSON", () => {
-    saveItem(KEY, [party], localStorage);
-    expect(loadItem(KEY, asIs, null, localStorage)).toEqual([party]);
+    saveItem(KEY, [node], localStorage);
+    expect(loadItem(KEY, asIs, null, localStorage)).toEqual([node]);
   });
 
   it("runs the stored value through parse", () => {
-    saveItem(KEY, [party, 42], localStorage);
-    expect(loadItem(KEY, parseSources, [], localStorage)).toEqual([party]);
+    saveItem(KEY, [node, 42], localStorage);
+    expect(loadItem(KEY, parseSources, [], localStorage)).toEqual([node]);
   });
 
   it("removes the entry for undefined", () => {
-    saveItem(KEY, [party], localStorage);
+    saveItem(KEY, [node], localStorage);
     saveItem(KEY, undefined, localStorage);
     expect(localStorage.getItem(KEY)).toBeNull();
   });
@@ -35,11 +35,11 @@ describe("saveItem and loadItem", () => {
   });
 
   it("reports a full storage", () => {
-    expect(saveItem(KEY, [party], refusingStorage("QuotaExceededError"))).toBe(false);
+    expect(saveItem(KEY, [node], refusingStorage("QuotaExceededError"))).toBe(false);
   });
 
   it("reports missing storage", () => {
-    expect(saveItem(KEY, [party], null)).toBe(false);
+    expect(saveItem(KEY, [node], null)).toBe(false);
   });
 
   it("falls back on blocked storage", () => {
@@ -56,14 +56,14 @@ describe("saveItem and loadItem", () => {
   });
 
   it("uses the browser's localStorage by default", () => {
-    saveItem(KEY, [party]);
-    expect(loadItem(KEY, asIs, null)).toEqual([party]);
+    saveItem(KEY, [node]);
+    expect(loadItem(KEY, asIs, null)).toEqual([node]);
   });
 });
 
 describe("parseSources", () => {
   it("drops malformed entries", () => {
-    expect(parseSources([party, 42, { name: "x" }])).toEqual([party]);
+    expect(parseSources([node, 42, { name: "x" }])).toEqual([node]);
   });
 
   it("ignores a non-array", () => {

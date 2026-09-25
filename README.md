@@ -17,7 +17,7 @@ One CSV per table, named after the entity it holds:
 
 ```csv
 # connection.csv
-connection_id,party_a_id,party_b_id,role_a,role_b,valid_from,valid_to,tech_valid_from,tech_valid_to
+connection_id,node_a_id,node_b_id,role_a,role_b,valid_from,valid_to,tech_valid_from,tech_valid_to
 100,1,2,supplier,customer,2024-02-15,2024-05-01,2024-05-01 09:00:00,
 100,1,2,supplier,reseller,2024-05-01,,2024-05-01 09:00:00,
 ```
@@ -25,7 +25,7 @@ connection_id,party_a_id,party_b_id,role_a,role_b,valid_from,valid_to,tech_valid
 | Column | Rule |
 |---|---|
 | `valid_from` `valid_to` `tech_valid_from` `tech_valid_to` | Required. Names listed in [`src/config/columns.json`](src/config/columns.json) are picked up automatically; for any other names the app asks you to pick the four columns once and remembers the choice. Click a table's chip in the legend to change it later. A blank value, `null` or year 9999 means an open end. Times without an offset are read as UTC. |
-| `<entity>_id` | Links the row to an entity. By default the column name must equal the entity, or start or end with it: `party_a_id` and `owner_party_id` both point to `party.csv`. For other names, click the table's chip in the legend and pick its key and what each column links to, e.g. key `id` in `customers.csv`, and `supplier_id` links to `party`. The choice is remembered. |
+| `<entity>_id` | Links the row to an entity. By default the column name must equal the entity, or start or end with it: `node_a_id` and `owner_node_id` both point to `node.csv`. For other names, click the table's chip in the legend and pick its key and what each column links to, e.g. key `id` in `customers.csv`, and `supplier_id` links to `node`. The choice is remembered. |
 | everything else | Descriptive. The first two such values label the bar, and the tooltip shows them all. |
 
 A table whose own id is present (`connection_id` in `connection.csv`) gets one lane per id.
@@ -46,7 +46,7 @@ notice says so and they last only until the tab closes.
 - **Tech time:** *As of* shows what the database held at that moment. Step with
   ‹ › through every instant the data changed. *All versions* also shows superseded rows,
   hatched.
-- **Focus:** `connection` `100` with 1 hop shows connection 100, its two parties, its
+- **Focus:** `connection` `100` with 1 hop shows connection 100, its two nodes, its
   network, its mapping row and its joined rows. Anything linked to something outside that
   circle stays hidden. 0 hops shows only the entity itself.
 - **Click** anywhere to set a valid-time cursor. The **Snapshot** panel then lists the row
@@ -59,10 +59,10 @@ notice says so and they last only until the tab closes.
 
 ## Sample data
 
-[`src/sample/`](src/sample/) follows one story. Rows are created in the order party,
+[`src/sample/`](src/sample/) follows one story. Rows are created in the order node,
 connection, network (if it does not exist yet), membership, a few seconds apart in tech time.
-They are deleted in reverse. Party 1 is renamed with effect from 2024-06-01, recorded on
-06-03. Party 3's typo is corrected retroactively. Connection 100 changes role on 05-01 and
+They are deleted in reverse. Node 1 is renamed with effect from 2024-06-01, recorded on
+06-03. Node 3's typo is corrected retroactively. Connection 100 changes role on 05-01 and
 ends on 09-30: its membership is closed first, then the connection. The mapping of
 connection 101 to network 10 arrives late. `joined.csv` is their bitemporal inner join, built by intersecting
 rectangles.

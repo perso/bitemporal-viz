@@ -8,10 +8,10 @@ const lane = (table: string, key: string) => versions.filter((v) => v.table === 
 const created = (table: string, key: string) => Math.min(...lane(table, key).map((v) => v.techFrom));
 const deleted = (table: string, key: string) => Math.max(...lane(table, key).map((v) => v.techFrom));
 
-describe("sample creation order: party, connection, network, membership", () => {
+describe("sample creation order: node, connection, network, membership", () => {
   it("creates connection 101's rows in order", () => {
     const order = [
-      created("party", "party 3"),
+      created("node", "node 3"),
       created("connection", "connection 101"),
       created("network", "network 11"),
       created("network_connection", "network 11 · connection 101"),

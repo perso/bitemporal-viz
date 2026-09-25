@@ -17,7 +17,7 @@ describe("deriveView", () => {
   });
 
   it("rewinds to an earlier tech time", () => {
-    const view = deriveView(dataset, { seed: "party:3", hops: 0, asOf: parseInstant("2024-03-02") });
+    const view = deriveView(dataset, { seed: "node:3", hops: 0, asOf: parseInstant("2024-03-02") });
     expect(view.shown.map((v) => v.label)).toEqual(["Carol Ltf"]);
   });
 
@@ -27,11 +27,11 @@ describe("deriveView", () => {
 
   it("lays out lanes in table order", () => {
     const view = deriveView(dataset, { seed: "network:11", hops: 1, asOf: NOW });
-    expect(view.lanes.map((l) => l.table)).toEqual(["party", "party", "network", "connection", "network_connection", "joined"]);
+    expect(view.lanes.map((l) => l.table)).toEqual(["node", "node", "network", "connection", "network_connection", "joined"]);
   });
 
   it("offers the tech change points of the filtered rows", () => {
-    expect(deriveView(dataset, { seed: "party:2", hops: 0, asOf: NOW }).techPoints).toEqual([
+    expect(deriveView(dataset, { seed: "node:2", hops: 0, asOf: NOW }).techPoints).toEqual([
       parseInstant("2024-02-15 10:00:00"),
     ]);
   });

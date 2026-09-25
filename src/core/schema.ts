@@ -7,7 +7,7 @@ export type TimeColumns = {
   readonly techTo: string;
 };
 
-/** A column holding the id of an entity, e.g. `party_a_id` → `party`. */
+/** A column holding the id of an entity, e.g. `node_a_id` → `node`. */
 export type Reference = { readonly column: string; readonly entity: string };
 
 /**
@@ -69,7 +69,7 @@ export function completeTimeColumns(partial: Partial<TimeColumns>): TimeColumns 
 /**
  * Keep only complete, well-formed entries from stored JSON; malformed keys are dropped on their own.
  *
- * @example parseColumnSettings({ party: { validFrom: "vf", ... }, junk: 1 }) // { party: … }
+ * @example parseColumnSettings({ node: { validFrom: "vf", ... }, junk: 1 }) // { node: … }
  */
 export function parseColumnSettings(raw: unknown): ColumnSettings {
   if (!isRecord(raw)) return {};
@@ -100,8 +100,8 @@ const isKeys = (value: unknown): value is Keys =>
 /**
  * Map a `*_id` column to the longest entity name its stem equals, starts or ends with.
  *
- * @example referencedEntity("owner_party_id", ["party", "network"]) // "party"
- * @example referencedEntity("party_a_id", ["party"]) // "party"
+ * @example referencedEntity("owner_node_id", ["node", "network"]) // "node"
+ * @example referencedEntity("node_a_id", ["node"]) // "node"
  */
 export function referencedEntity(column: string, entities: readonly string[]): string | null {
   const lower = column.toLowerCase();
@@ -130,8 +130,8 @@ export function inferReferences(
 /**
  * Guess the own key and the links from `*_id` column names.
  *
- * @example guessKeys("connection", ["connection_id", "party_a_id"], ["connection", "party"])
- * // { key: "connection_id", links: [{ column: "party_a_id", entity: "party" }] }
+ * @example guessKeys("connection", ["connection_id", "node_a_id"], ["connection", "node"])
+ * // { key: "connection_id", links: [{ column: "node_a_id", entity: "node" }] }
  */
 export function guessKeys(
   table: string,
@@ -170,8 +170,8 @@ export function withoutTimeColumns(keys: Keys, time: Partial<TimeColumns>): Keys
 /**
  * Every key and link column as a reference, in header order; the key refers to the table itself.
  *
- * @example keyReferences("party", ["owner_id", "party_id"], { key: "party_id", links: [{ column: "owner_id", entity: "party" }] })
- * // [{ column: "owner_id", entity: "party" }, { column: "party_id", entity: "party" }]
+ * @example keyReferences("node", ["owner_id", "node_id"], { key: "node_id", links: [{ column: "owner_id", entity: "node" }] })
+ * // [{ column: "owner_id", entity: "node" }, { column: "node_id", entity: "node" }]
  */
 export function keyReferences(table: string, header: readonly string[], keys: Keys): Reference[] {
   const own = keys.key === null ? [] : [{ column: keys.key, entity: table }];
