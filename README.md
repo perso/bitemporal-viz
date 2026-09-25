@@ -25,7 +25,7 @@ connection_id,party_a_id,party_b_id,role_a,role_b,valid_from,valid_to,tech_valid
 | Column | Rule |
 |---|---|
 | `valid_from` `valid_to` `tech_valid_from` `tech_valid_to` | Required. Names listed in [`src/config/columns.json`](src/config/columns.json) are picked up automatically; for any other names the app asks you to pick the four columns once and remembers the choice. Click a table's chip in the legend to change it later. A blank value, `null` or year 9999 means an open end. Times without an offset are read as UTC. |
-| `<entity>_id` | Links the row to an entity. The column name must equal the entity, or start or end with it: `party_a_id` and `owner_party_id` both point to `party.csv`. |
+| `<entity>_id` | Links the row to an entity. By default the column name must equal the entity, or start or end with it: `party_a_id` and `owner_party_id` both point to `party.csv`. For other names, click the table's chip in the legend and pick its key and what each column links to, e.g. key `id` in `customers.csv`, and `supplier_id` links to `party`. The choice is remembered. |
 | everything else | Descriptive. The first two such values label the bar, and the tooltip shows them all. |
 
 A table whose own id is present (`connection_id` in `connection.csv`) gets one lane per id.
@@ -35,7 +35,7 @@ one, so you can re-run the join and reload just `joined.csv`.
 
 Files never leave the browser. They are read locally and kept in `localStorage` together
 with the view (focus, hops, tech time, guides, zoom, cursor and selected lane) and your
-time-column choices, so all of it survives a reload. **Reset view** restores the default
+column choices, so all of it survives a reload. **Reset view** restores the default
 view and keeps the files. **Clear** forgets everything. If the files are too large for the browser's quota (usually around 5 MB), a
 notice says so and they last only until the tab closes.
 

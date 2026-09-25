@@ -8,6 +8,8 @@ const TIMES = "valid_from,valid_to,tech_valid_from,tech_valid_to";
 const party = { name: "party.csv", text: `party_id,name,${TIMES}\n1,Alice,2024-01-01,,2024-01-01,\n` };
 const link = { name: "party_link.csv", text: `party_a_id,party_b_id,${TIMES}\n1,2,2024-01-01,,2024-01-01,\n` };
 
+const TIME_SETTINGS = { validFrom: "valid_from", validTo: "valid_to", techFrom: "tech_valid_from", techTo: "tech_valid_to" };
+
 const sample = buildDataset(SAMPLE_SOURCES);
 const table = (name: string) => sample.tables.find((t) => t.name === name);
 
@@ -72,7 +74,7 @@ describe("buildDataset", () => {
   it("holds back a table without recognisable time columns", () => {
     const text = "id,created,changed\n1,2024-01-01,";
     expect(buildDataset([{ name: "odd.csv", text }]).unmapped).toEqual([
-      { name: "odd", header: ["id", "created", "changed"], guess: {}, sample: { id: "1", created: "2024-01-01", changed: "" }, error: null },
+      { name: "odd", header: ["id", "created", "changed"], guess: {}, keys: { key: null, links: [] }, sample: { id: "1", created: "2024-01-01", changed: "" }, error: null },
     ]);
   });
 
@@ -97,6 +99,24 @@ describe("buildDataset", () => {
     expect(buildDataset([{ name: "party.csv", text }]).unmapped[0]?.error).toBe("row 2: start times must not be empty");
   });
 
+  it("uses a stored key", () => {
+    const text = `id,${TIMES}\n7,2024-01-01,,2024-01-01,\n`;
+    const settings = { customers: { ...TIME_SETTINGS, keys: { key: "id", links: [] } } };
+    expect(buildDataset([{ name: "customers.csv", text }], settings).tables[0]?.versions[0]?.lane).toBe("customers 7");
+  });
+
+  it("uses a stored link", () => {
+    const text = `party_id,supplier_id,${TIMES}\n1,2,2024-01-01,,2024-01-01,\n`;
+    const keys = { key: "party_id", links: [{ column: "supplier_id", entity: "party" }] };
+    const loaded = buildDataset([{ name: "party.csv", text }], { party: { ...TIME_SETTINGS, keys } });
+    expect(loaded.tables[0]?.versions[0]?.refs).toEqual(["party:1", "party:2"]);
+  });
+
+  it("puts every row in one lane when the key is set to none and nothing links", () => {
+    const settings = { party: { ...TIME_SETTINGS, keys: { key: null, links: [] } } };
+    expect(buildDataset([party], settings).tables[0]?.versions[0]?.lane).toBe("party");
+  });
+
   it("uses the table name as the lane when there are no ids", () => {
     const text = `note,${TIMES}\nhi,2024-01-01,,2024-01-01,\n`;
     expect(buildDataset([{ name: "notes.csv", text }]).tables[0]?.versions[0]?.lane).toBe("notes");
@@ -107,6 +127,14 @@ describe("asUnmapped", () => {
   it("offers a loaded table's columns for editing", () => {
     const loaded = buildDataset([party]).tables[0];
     expect(loaded && asUnmapped(loaded)).toMatchObject({ name: "party", guess: loaded?.timeColumns, error: null });
+  });
+
+  it("offers a loaded table's key and links for editing", () => {
+    const loaded = buildDataset([party, link]).tables[1];
+    expect(loaded && asUnmapped(loaded).keys).toEqual({
+      key: null,
+      links: [{ column: "party_a_id", entity: "party" }, { column: "party_b_id", entity: "party" }],
+    });
   });
 });
 
