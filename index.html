@@ -3,11 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bitemporal Viewer</title>
+    <title>Bitemporal Viewer: visualize bitemporal tables and debug their joins</title>
+    <meta
+      name="description"
+      content="Free browser tool to visualize bitemporal and time series CSV tables on one timeline and debug their joins. Valid time and transaction time, as-of time slices, SCD type 2 history. Files stay in your browser."
+    />
+    <link rel="canonical" href="https://perso.github.io/bitemporal-viz/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://perso.github.io/bitemporal-viz/" />
+    <meta property="og:title" content="Bitemporal Viewer" />
+    <meta
+      property="og:description"
+      content="Visualize bitemporal CSV tables on one timeline and debug their joins, right in your browser."
+    />
     <meta name="google-site-verification" content="NbuXwewxKMTyz9z8SRbgAo9zdiHuI8LnyCmIO_ZpZio" />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Shown until the app starts, and read by search engines and anyone without JavaScript. -->
+    <div id="root">
+      <main style="max-width: 44rem; margin: 2rem auto; padding: 0 16px; font-family: system-ui, sans-serif">
+        <h1>Bitemporal Viewer</h1>
+        <p>
+          A browser tool to visualize bitemporal tables and debug the joins between them. Drop in
+          your source tables and the join output as CSV files, and every row version appears on one
+          valid-time timeline, so you can see where a join of time series data went wrong.
+        </p>
+        <p>
+          Step through transaction time (system time) to view the time slice the database held at
+          any moment, as of a given date. Click a point in valid time to compare what each table
+          held there. Corrections, overlapping versions and late-arriving rows stand out. It works
+          with any history table exported to CSV: SCD type 2 dimensions, SQL temporal tables
+          (system-versioned), Data Vault satellites.
+        </p>
+        <p>
+          Files never leave your browser. The source is on
+          <a href="https://github.com/perso/bitemporal-viz">GitHub</a>.
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
