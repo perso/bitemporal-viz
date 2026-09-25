@@ -4,7 +4,7 @@ import { splitRef } from "./dataset";
 /**
  * Entities within `hops` steps of `seed`, stepping through any row that references both.
  *
- * @example neighbourhood(versions, "connection:100", 1) // {connection:100, party:1, party:2, group:10}
+ * @example neighbourhood(versions, "connection:100", 1) // {connection:100, party:1, party:2, network:10}
  */
 export function neighbourhood(
   versions: readonly Version[],

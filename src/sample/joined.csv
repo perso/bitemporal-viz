@@ -1,4 +1,4 @@
-group_id,group_name,connection_id,party_a_id,party_a_name,party_b_id,party_b_name,role_a,role_b,valid_from,valid_to,tech_valid_from,tech_valid_to
+network_id,network_name,connection_id,party_a_id,party_a_name,party_b_id,party_b_name,role_a,role_b,valid_from,valid_to,tech_valid_from,tech_valid_to
 10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,customer,2024-02-15,,2024-02-15 10:00:10,2024-05-01 09:00:00
 10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,customer,2024-02-15,2024-05-01,2024-05-01 09:00:00,2024-06-03 08:15:00
 10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,reseller,2024-05-01,,2024-05-01 09:00:00,2024-06-03 08:15:00

@@ -171,7 +171,7 @@ function buildVersion(table: TableShape, record: CsvRecord, index: number): Vers
   return version;
 }
 
-/** Rows sharing a lane are versions of the same thing, e.g. `"group 10 · connection 100"`. */
+/** Rows sharing a lane are versions of the same thing, e.g. `"network 10 · connection 100"`. */
 function laneKey(table: TableShape, record: CsvRecord): string {
   if (table.laneColumns.length === 0) return table.name;
   return table.laneColumns.map((ref) => `${ref.entity} ${record[ref.column] ?? ""}`).join(" · ");

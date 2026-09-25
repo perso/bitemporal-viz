@@ -27,11 +27,11 @@ describe("buildDataset", () => {
   });
 
   it("has no own key for a link table", () => {
-    expect(table("group_connection")?.keyColumn).toBeNull();
+    expect(table("network_connection")?.keyColumn).toBeNull();
   });
 
   it("uses every reference as the lane of a link table", () => {
-    expect(table("group_connection")?.versions[0]?.lane).toBe("group 10 · connection 100");
+    expect(table("network_connection")?.versions[0]?.lane).toBe("network 10 · connection 100");
   });
 
   it("shortens a composite lane label to its values", () => {
@@ -47,7 +47,7 @@ describe("buildDataset", () => {
   });
 
   it("falls back to the lane label when nothing is descriptive", () => {
-    expect(table("group_connection")?.versions[0]?.label).toBe("10 · 100");
+    expect(table("network_connection")?.versions[0]?.label).toBe("10 · 100");
   });
 
   it("collects entity references", () => {
@@ -55,7 +55,7 @@ describe("buildDataset", () => {
   });
 
   it("identifies a link row by all of its references", () => {
-    expect(table("group_connection")?.versions[0]?.keyRefs).toEqual(["group:10", "connection:100"]);
+    expect(table("network_connection")?.versions[0]?.keyRefs).toEqual(["network:10", "connection:100"]);
   });
 
   it("skips empty references", () => {

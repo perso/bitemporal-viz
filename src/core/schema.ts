@@ -13,7 +13,7 @@ export type Reference = { readonly column: string; readonly entity: string };
 /**
  * Turn a file name into a table name, which doubles as the entity name.
  *
- * @example tableNameFromFile("Group Connection.csv") // "group_connection"
+ * @example tableNameFromFile("Network Connection.csv") // "network_connection"
  */
 export function tableNameFromFile(fileName: string): string {
   return fileName
@@ -100,7 +100,7 @@ const isKeys = (value: unknown): value is Keys =>
 /**
  * Map a `*_id` column to the longest entity name its stem equals, starts or ends with.
  *
- * @example referencedEntity("owner_party_id", ["party", "group"]) // "party"
+ * @example referencedEntity("owner_party_id", ["party", "network"]) // "party"
  * @example referencedEntity("party_a_id", ["party"]) // "party"
  */
 export function referencedEntity(column: string, entities: readonly string[]): string | null {

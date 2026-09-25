@@ -29,7 +29,7 @@ connection_id,party_a_id,party_b_id,role_a,role_b,valid_from,valid_to,tech_valid
 | everything else | Descriptive. The first two such values label the bar, and the tooltip shows them all. |
 
 A table whose own id is present (`connection_id` in `connection.csv`) gets one lane per id.
-A table without one, like `group_connection.csv` or your join output, gets one lane per
+A table without one, like `network_connection.csv` or your join output, gets one lane per
 combination of its ids. If you drop a file with the same name again, it replaces the old
 one, so you can re-run the join and reload just `joined.csv`.
 
@@ -47,7 +47,7 @@ notice says so and they last only until the tab closes.
   ‹ › through every instant the data changed. *All versions* also shows superseded rows,
   hatched.
 - **Focus:** `connection` `100` with 1 hop shows connection 100, its two parties, its
-  group, its mapping row and its joined rows. Anything linked to something outside that
+  network, its mapping row and its joined rows. Anything linked to something outside that
   circle stays hidden. 0 hops shows only the entity itself.
 - **Click** anywhere to set a valid-time cursor. The **Snapshot** panel then lists the row
   each table holds at that point, so you can check a joined row against its inputs.
@@ -60,11 +60,11 @@ notice says so and they last only until the tab closes.
 ## Sample data
 
 [`src/sample/`](src/sample/) follows one story. Rows are created in the order party,
-connection, group (if it does not exist yet), membership, a few seconds apart in tech time.
+connection, network (if it does not exist yet), membership, a few seconds apart in tech time.
 They are deleted in reverse. Party 1 is renamed with effect from 2024-06-01, recorded on
 06-03. Party 3's typo is corrected retroactively. Connection 100 changes role on 05-01 and
 ends on 09-30: its membership is closed first, then the connection. The mapping of
-connection 101 to group 10 arrives late. `joined.csv` is their bitemporal inner join, built by intersecting
+connection 101 to network 10 arrives late. `joined.csv` is their bitemporal inner join, built by intersecting
 rectangles.
 
 ## Development
