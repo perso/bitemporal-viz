@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import { buildDataset } from "../../src/core/dataset";
 import { NOW, parseInstant } from "../../src/core/time";
 import { deriveView } from "../../src/core/view";
-import { SAMPLE_SOURCES } from "../../src/sample";
+import { NETWORK_SOURCES } from "../fixtures/network";
 
-const dataset = buildDataset(SAMPLE_SOURCES);
+const dataset = buildDataset(NETWORK_SOURCES);
 
 describe("deriveView", () => {
   it("shows current knowledge by default", () => {

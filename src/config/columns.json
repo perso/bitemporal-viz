@@ -1,6 +1,6 @@
 {
   "validFrom": ["valid_from", "business_valid_from", "valid_start"],
   "validTo": ["valid_to", "business_valid_to", "valid_end"],
-  "techFrom": ["tech_valid_from", "technical_valid_from", "tx_from", "system_from"],
-  "techTo": ["tech_valid_to", "technical_valid_to", "tx_to", "system_to"]
+  "techFrom": ["tech_valid_from", "technical_valid_from", "tx_from", "system_from", "transaction_start"],
+  "techTo": ["tech_valid_to", "technical_valid_to", "tx_to", "system_to", "transaction_end"]
 }

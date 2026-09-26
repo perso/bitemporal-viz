@@ -1,8 +1,13 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { App } from "../../src/App";
+
+// The network data has more tables and links to click through than the app's sample.
+vi.mock("../../src/sample", async () => ({
+  SAMPLE_SOURCES: (await import("../fixtures/network")).NETWORK_SOURCES,
+}));
 
 async function loadSample() {
   const user = userEvent.setup();

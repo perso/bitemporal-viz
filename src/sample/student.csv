@@ -1,0 +1,4 @@
+student_id,major,valid_from,valid_to,transaction_start,transaction_end
+101,Biology,2025-09-01,9999-12-31,2025-09-01,2026-03-01
+101,Biology,2025-09-01,2026-01-01,2026-03-01,9999-12-31
+101,CS,2026-01-01,9999-12-31,2026-03-01,9999-12-31

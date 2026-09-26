@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { allVersions, buildDataset } from "../../src/core/dataset";
 import { entityIds, entityNames, naturalCompare, neighbourhood, relatedVersions } from "../../src/core/filter";
-import { SAMPLE_SOURCES } from "../../src/sample";
+import { NETWORK_SOURCES } from "../fixtures/network";
 
-const versions = allVersions(buildDataset(SAMPLE_SOURCES));
+const versions = allVersions(buildDataset(NETWORK_SOURCES));
 const lanes = (seed: string, hops: number) =>
   [...new Set(relatedVersions(versions, seed, hops).map((v) => v.lane))];
 

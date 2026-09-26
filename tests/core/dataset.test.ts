@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { allVersions, asUnmapped, buildDataset, mergeSources, splitRef } from "../../src/core/dataset";
 import { OPEN } from "../../src/core/time";
-import { SAMPLE_SOURCES } from "../../src/sample";
+import { NETWORK_SOURCES } from "../fixtures/network";
 
 const TIMES = "valid_from,valid_to,tech_valid_from,tech_valid_to";
 const node = { name: "node.csv", text: `node_id,name,${TIMES}\n1,Alice,2024-01-01,,2024-01-01,\n` };
@@ -10,7 +10,7 @@ const link = { name: "node_link.csv", text: `node_a_id,node_b_id,${TIMES}\n1,2,2
 
 const TIME_SETTINGS = { validFrom: "valid_from", validTo: "valid_to", techFrom: "tech_valid_from", techTo: "tech_valid_to" };
 
-const sample = buildDataset(SAMPLE_SOURCES);
+const sample = buildDataset(NETWORK_SOURCES);
 const table = (name: string) => sample.tables.find((t) => t.name === name);
 const linkTable = buildDataset([node, link]).tables.find((t) => t.name === "node_link");
 
