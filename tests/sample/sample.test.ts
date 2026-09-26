@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { findConflicts, rectanglesOverlap, snapshot } from "../../src/core/bitemporal";
 import { allVersions, buildDataset, type Version } from "../../src/core/dataset";
+import { neighbourhood } from "../../src/core/filter";
 import { NOW, parseInstant } from "../../src/core/time";
 import { SAMPLE_SOURCES } from "../../src/sample";
 
@@ -19,9 +20,9 @@ function february(student: string, techTime: number): string[] {
 
 type Rectangle = Pick<Version, "validFrom" | "validTo" | "techFrom" | "techTo">;
 
-/** Major, grade and rectangle as one string, so a computed join compares equal to `joined.csv`. */
-const describeRow = (major: string | undefined, grade: string | undefined, r: Rectangle) =>
-  [major, grade, r.validFrom, r.validTo, r.techFrom, r.techTo].join(" ");
+/** Values and rectangle as one string, so a computed join compares equal to `joined.csv`. */
+const describeRow = (values: readonly (string | undefined)[], r: Rectangle) =>
+  [...values, r.validFrom, r.validTo, r.techFrom, r.techTo].join(" ");
 
 const intersection = (a: Rectangle, b: Rectangle): Rectangle => ({
   validFrom: Math.max(a.validFrom, b.validFrom),
@@ -30,11 +31,19 @@ const intersection = (a: Rectangle, b: Rectangle): Rectangle => ({
   techTo: Math.min(a.techTo, b.techTo),
 });
 
-const joinStudentAndGrade = (): string[] =>
+/** Every course row that coexists with a grade row, each as its joined description. */
+const withCourse = (student: Version, grade: Version): string[] => {
+  const both = intersection(student, grade);
+  return rows("course")
+    .filter((c) => c.record.course_id === grade.record.course_id && rectanglesOverlap(both, c))
+    .map((c) => describeRow([student.record.major, c.record.name, grade.record.grade], intersection(both, c)));
+};
+
+const joinSample = (): string[] =>
   rows("student").flatMap((s) =>
     rows("grade")
       .filter((g) => g.record.student_id === s.record.student_id && rectanglesOverlap(s, g))
-      .map((g) => describeRow(s.record.major, g.record.grade, intersection(s, g))),
+      .flatMap((g) => withCourse(s, g)),
   );
 
 describe("sample", () => {
@@ -42,9 +51,23 @@ describe("sample", () => {
     expect(dataset.unmapped).toEqual([]);
   });
 
-  it("holds exactly the bitemporal join of student and grade in joined.csv", () => {
-    const joined = rows("joined").map((j) => describeRow(j.record.major, j.record.grade, j));
-    expect(joined.sort()).toEqual(joinStudentAndGrade().sort());
+  it("holds exactly the bitemporal join of student, grade and course in joined.csv", () => {
+    const joined = rows("joined").map((j) =>
+      describeRow([j.record.major, j.record.course_name, j.record.grade], j),
+    );
+    expect(joined.sort()).toEqual(joinSample().sort());
+  });
+
+  it("gives each grade its own lane per student and course", () => {
+    expect(rows("grade").map((g) => g.lane)).toEqual([
+      "student 101 · course CS101",
+      "student 101 · course CS101",
+      "student 102 · course PHYS101",
+    ]);
+  });
+
+  it("reaches a course's students in one hop", () => {
+    expect(neighbourhood(versions, "course:CS101", 1)).toEqual(new Set(["course:CS101", "student:101"]));
   });
 });
 
