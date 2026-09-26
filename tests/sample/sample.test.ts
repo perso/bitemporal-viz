@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { rectanglesOverlap, snapshot } from "../../src/core/bitemporal";
+import { findConflicts, rectanglesOverlap, snapshot } from "../../src/core/bitemporal";
 import { allVersions, buildDataset, type Version } from "../../src/core/dataset";
 import { NOW, parseInstant } from "../../src/core/time";
 import { SAMPLE_SOURCES } from "../../src/sample";
@@ -9,10 +9,12 @@ const dataset = buildDataset(SAMPLE_SOURCES);
 const versions = allVersions(dataset);
 const rows = (table: string) => versions.filter((v) => v.table === table);
 
-/** Major and grade of Alex as the review board sees February 20th, asked at `techTime`. */
-function february(techTime: number): string[] {
+/** Major and grade of a student as the review board sees February 20th, asked at `techTime`. */
+function february(student: string, techTime: number): string[] {
   const seen = snapshot(versions, parseInstant("2026-02-20"), techTime);
-  return seen.filter((v) => v.table === "joined").map((v) => `${v.record.major} · ${v.record.grade}`);
+  return seen
+    .filter((v) => v.table === "joined" && v.record.student_id === student)
+    .map((v) => `${v.record.major} · ${v.record.grade}`);
 }
 
 type Rectangle = Pick<Version, "validFrom" | "validTo" | "techFrom" | "techTo">;
@@ -48,14 +50,27 @@ describe("sample", () => {
 
 describe("the review board's view of February", () => {
   it("saw a Biology student failing, as recorded on February 20th", () => {
-    expect(february(parseInstant("2026-02-20"))).toEqual(["Biology · F"]);
+    expect(february("101", parseInstant("2026-02-20"))).toEqual(["Biology · F"]);
   });
 
   it("would have seen a failing CS major, if asked in March", () => {
-    expect(february(parseInstant("2026-03-15"))).toEqual(["CS · F"]);
+    expect(february("101", parseInstant("2026-03-15"))).toEqual(["CS · F"]);
   });
 
   it("sees a CS major with an A, as known today", () => {
-    expect(february(NOW)).toEqual(["CS · A"]);
+    expect(february("101", NOW)).toEqual(["CS · A"]);
+  });
+});
+
+describe("Sam's major change, loaded without closing the old major", () => {
+  it("flags the overlap in student and in the join it spreads to", () => {
+    const flagged = versions.filter((v) => findConflicts(versions).has(v.id));
+    expect(new Set(flagged.map((v) => `${v.table}: ${v.lane}`))).toEqual(
+      new Set(["student: student 102", "joined: student 102"]),
+    );
+  });
+
+  it("counts Sam twice in the join", () => {
+    expect(february("102", NOW)).toEqual(["Math · B", "Physics · B"]);
   });
 });

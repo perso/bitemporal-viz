@@ -67,7 +67,10 @@ inner join of `student.csv` and `grade.csv`, built by intersecting rectangles: t
 because the Biology row was superseded before the A was recorded. Set the cursor on
 2026-02-20 and step *As of* through tech time to see what a review board meeting that day saw
 (a Biology student failing), what it would have seen in March (a CS major failing) and what
-is known today (a CS major with an A).
+is known today (a CS major with an A). Sam (102) switches from Math to Physics, but the load
+inserts the Physics row without closing the Math one: both claim 2026 as known today, so
+`student.csv` shows a red **!**, and so does `joined.csv`, where Sam is counted twice. Focus
+on `student` `101` or `102` to follow one of them.
 
 ## Development
 
