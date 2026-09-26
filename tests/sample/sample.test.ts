@@ -62,15 +62,12 @@ describe("the review board's view of February", () => {
   });
 });
 
-describe("Sam's major change, loaded without closing the old major", () => {
-  it("flags the overlap in student and in the join it spreads to", () => {
-    const flagged = versions.filter((v) => findConflicts(versions).has(v.id));
-    expect(new Set(flagged.map((v) => `${v.table}: ${v.lane}`))).toEqual(
-      new Set(["student: student 102", "joined: student 102"]),
-    );
+describe("Sam's major change, recorded on time", () => {
+  it("leaves no overlapping versions in the sample", () => {
+    expect(findConflicts(versions)).toEqual(new Set());
   });
 
-  it("counts Sam twice in the join", () => {
-    expect(february("102", NOW)).toEqual(["Math · B", "Physics · B"]);
+  it("counts Sam once, as recorded on February 20th", () => {
+    expect(february("102", parseInstant("2026-02-20"))).toEqual(["Physics · B"]);
   });
 });
