@@ -31,7 +31,7 @@ student_id,major,valid_from,valid_to,transaction_start,transaction_end
 
 A table whose own id is present (`student_id` in `student.csv`) gets one lane per id.
 A table without one, like `grade.csv` or your join output `joined.csv`, gets one lane per
-combination of its ids. If you drop a file with the same name again, it replaces the old
+combination of its ids: `student 101 · course CS101`. If you drop a file with the same name again, it replaces the old
 one, so you can re-run the join and reload just `joined.csv`.
 
 Files never leave the browser. They are read locally and kept in `localStorage` together
@@ -62,14 +62,16 @@ notice says so and they last only until the tab closes.
 
 [`src/sample/`](src/sample/) follows two students. Alex (101) asks in January to switch
 major from Biology to CS, and the office records it only on 2026-03-01, back-dated to January.
-A CS 101 grade is entered as F on 02-15 and corrected to A on 04-01. `joined.csv` is the
-bitemporal inner join of `student.csv` and `grade.csv`, built by intersecting rectangles.
+A CS101 grade is entered as F on 02-15 and corrected to A on 04-01. `course.csv` never
+changes. `joined.csv` is the bitemporal inner join of `student.csv`, `grade.csv` and
+`course.csv`, built by intersecting rectangles.
 Alex gets three rows in it, not four, because the Biology row was superseded before the A was
 recorded. Set the cursor on 2026-02-20 and step *As of* through tech time to see what a review
 board meeting that day saw (a Biology student failing), what it would have seen in March (a CS
 major failing) and what is known today (a CS major with an A). Sam (102) switches from Math to
 Physics, recorded on time, so Sam is a Physics student with a B throughout. Focus on
-`student` `101` or `102` to follow one of them.
+`student` `101` or `102` to follow one of them, or on `course` `CS101` with 1 hop to see who
+took it.
 
 ## Development
 
