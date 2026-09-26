@@ -60,18 +60,16 @@ notice says so and they last only until the tab closes.
 
 ## Sample data
 
-[`src/sample/`](src/sample/) follows one student. Alex asks in January to switch major
-from Biology to CS, and the office records it only on 2026-03-01, back-dated to January. A CS
-101 grade is entered as F on 02-15 and corrected to A on 04-01. `joined.csv` is the bitemporal
-inner join of `student.csv` and `grade.csv`, built by intersecting rectangles: three rows,
-because the Biology row was superseded before the A was recorded. Set the cursor on
-2026-02-20 and step *As of* through tech time to see what a review board meeting that day saw
-(a Biology student failing), what it would have seen in March (a CS major failing) and what
-is known today (a CS major with an A). Sam (102) switches from Math to Physics on 01-10, but the load
-inserts the Physics row without closing the Math one, and the mistake is fixed only on 02-25.
-Today's data is clean, but tech time keeps the six weeks when both majors were believed, so
-`student.csv` shows a red **!** on those rows, and so does `joined.csv`: a review board on
-02-20 counted Sam twice. Focus on `student` `101` or `102` to follow one of them.
+[`src/sample/`](src/sample/) follows two students. Alex (101) asks in January to switch
+major from Biology to CS, and the office records it only on 2026-03-01, back-dated to January.
+A CS 101 grade is entered as F on 02-15 and corrected to A on 04-01. `joined.csv` is the
+bitemporal inner join of `student.csv` and `grade.csv`, built by intersecting rectangles.
+Alex gets three rows in it, not four, because the Biology row was superseded before the A was
+recorded. Set the cursor on 2026-02-20 and step *As of* through tech time to see what a review
+board meeting that day saw (a Biology student failing), what it would have seen in March (a CS
+major failing) and what is known today (a CS major with an A). Sam (102) switches from Math to
+Physics, recorded on time, so Sam is a Physics student with a B throughout. Focus on
+`student` `101` or `102` to follow one of them.
 
 ## Development
 
