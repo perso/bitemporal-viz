@@ -1,17 +1,4 @@
-network_connection_id,network_id,network_name,connection_id,node_a_id,node_a_name,node_b_id,node_b_name,role_a,role_b,valid_from,valid_to,tech_valid_from,tech_valid_to
-1000,10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,customer,2024-02-15,,2024-02-15 10:00:10,2024-05-01 09:00:00
-1000,10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,customer,2024-02-15,2024-05-01,2024-05-01 09:00:00,2024-06-03 08:15:00
-1000,10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,reseller,2024-05-01,,2024-05-01 09:00:00,2024-06-03 08:15:00
-1000,10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,customer,2024-02-15,2024-05-01,2024-06-03 08:15:00,2024-10-02 16:00:00
-1000,10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,reseller,2024-05-01,2024-06-01,2024-06-03 08:15:00,2024-10-02 16:00:00
-1000,10,Nordic Partners,100,1,Alice Group Oy,2,Bob Ab,supplier,reseller,2024-06-01,,2024-06-03 08:15:00,2024-10-02 16:00:00
-1000,10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,customer,2024-02-15,2024-05-01,2024-10-02 16:00:00,
-1000,10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,reseller,2024-05-01,2024-06-01,2024-10-02 16:00:00,2024-10-02 16:00:05
-1000,10,Nordic Partners,100,1,Alice Group Oy,2,Bob Ab,supplier,reseller,2024-06-01,2024-09-30,2024-10-02 16:00:00,2024-10-02 16:00:05
-1000,10,Nordic Partners,100,1,Alice Oy,2,Bob Ab,supplier,reseller,2024-05-01,2024-06-01,2024-10-02 16:00:05,
-1000,10,Nordic Partners,100,1,Alice Group Oy,2,Bob Ab,supplier,reseller,2024-06-01,2024-09-30,2024-10-02 16:00:05,
-1002,10,Nordic Partners,101,1,Alice Group Oy,3,Carol Ltd,partner,partner,2024-07-01,,2024-07-15 13:00:00,
-1001,11,Carol Network,101,1,Alice Oy,3,Carol Ltf,partner,partner,2024-03-01,,2024-03-01 11:00:10,2024-03-05 14:30:00
-1001,11,Carol Network,101,1,Alice Oy,3,Carol Ltd,partner,partner,2024-03-01,,2024-03-05 14:30:00,2024-06-03 08:15:00
-1001,11,Carol Network,101,1,Alice Oy,3,Carol Ltd,partner,partner,2024-03-01,2024-06-01,2024-06-03 08:15:00,
-1001,11,Carol Network,101,1,Alice Group Oy,3,Carol Ltd,partner,partner,2024-06-01,,2024-06-03 08:15:00,
+student_id,major,class,grade,valid_from,valid_to,transaction_start,transaction_end
+101,Biology,CS 101,F,2026-02-01,9999-12-31,2026-02-15,2026-03-01
+101,CS,CS 101,F,2026-02-01,9999-12-31,2026-03-01,2026-04-01
+101,CS,CS 101,A,2026-02-01,9999-12-31,2026-04-01,9999-12-31
