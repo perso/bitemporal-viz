@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { findConflicts, rectanglesOverlap, snapshot } from "../../src/core/bitemporal";
+import { findConflicts, knownAt, rectanglesOverlap, snapshot } from "../../src/core/bitemporal";
 import { allVersions, buildDataset, type Version } from "../../src/core/dataset";
 import { NOW, parseInstant } from "../../src/core/time";
 import { SAMPLE_SOURCES } from "../../src/sample";
@@ -62,15 +62,23 @@ describe("the review board's view of February", () => {
   });
 });
 
-describe("Sam's major change, loaded without closing the old major", () => {
-  it("flags the overlap in student and in the join it spreads to", () => {
+describe("Sam's major change, loaded without closing the old major and fixed later", () => {
+  it("keeps the overlap in history, in student and in the join it spread to", () => {
     const flagged = versions.filter((v) => findConflicts(versions).has(v.id));
     expect(new Set(flagged.map((v) => `${v.table}: ${v.lane}`))).toEqual(
       new Set(["student: student 102", "joined: student 102"]),
     );
   });
 
-  it("counts Sam twice in the join", () => {
-    expect(february("102", NOW)).toEqual(["Math · B", "Physics · B"]);
+  it("counted Sam twice, as recorded on February 20th", () => {
+    expect(february("102", parseInstant("2026-02-20"))).toEqual(["Math · B", "Physics · B"]);
+  });
+
+  it("counts Sam once, as known today", () => {
+    expect(february("102", NOW)).toEqual(["Physics · B"]);
+  });
+
+  it("has no overlap left in what is known today", () => {
+    expect(findConflicts(knownAt(versions, NOW))).toEqual(new Set());
   });
 });
